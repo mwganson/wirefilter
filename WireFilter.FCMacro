@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.10.19"
-#__version__ = "0.2021.10.19"
+__version__ = "0.2021.10.19.rev2"
+#__version__ = "0.2021.10.19.rev2"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part
 #class WireFilter:
@@ -26,6 +26,7 @@ __version__ = "0.2021.10.19"
 #        obj.addProperty("App::PropertyStringList","SelectedEdges","SelectedEdges","Select some edges of this object and toggle SelectEdges trigger to True")
 #        obj.addProperty("App::PropertyBool","SelectEdges","SelectedEdges","[Trigger] adds selected edges to Selected Edges property").SelectEdges = False
 #        obj.addProperty("App::PropertyBool","UseSelectedEdges","SelectedEdges","If True, and if Selected Edges is populated, makes a wire from selected edges and uses that for this object's shape").UseSelectedEdges = False
+#        obj.addProperty("App::PropertyBool","FixPadExtrudeNormal","WireFilter","[Trigger] Fix Pad or Extrude's custom direction if it can't find the normal correctly.").FixPadExtrudeNormal = False
 #        obj.Proxy = self
 #        obj.setEditorMode("WireOrder",1) #readonly to start, presuming UseSelected is True
 #        self.fpName = obj.Name
@@ -43,6 +44,23 @@ __version__ = "0.2021.10.19"
 #        elif prop == "SelectEdges" and fp.SelectEdges:
 #            fp.SelectEdges = False
 #            self.selectEdges(fp)
+#        elif prop == "FixPadExtrudeNormal" and fp.FixPadExtrudeNormal:
+#            fp.FixPadExtrudeNormal = False
+#            self.fixPadExtrudeNormal(fp)
+#
+#    def fixPadExtrudeNormal(self,fp):
+#        '''fixes a Pad or Extrude if it cannot find the correct normal direction for extruding'''
+#        inlist = fp.InList
+#        pads = [obj for obj in inlist if obj.TypeId == "PartDesign::Pad" and obj.Profile and obj.Profile[0] == fp]
+#        if len(pads) != 0:
+#            for pad in pads:
+#                pad.UseCustomVector = True
+#                pad.Direction = fp.Normal
+#        extrudes = [obj for obj in inlist if obj.TypeId == "Part::Extrusion" and obj.Base and obj.Base == fp]
+#        if len(extrudes) != 0:
+#            for ext in extrudes:
+#                ext.DirMode = "Custom"
+#                ext.Dir = fp.Normal
 #
 #    def selectEdges(self,fp):
 #        '''user will have selected some edges of this object in the 3D view and triggered this command'''
