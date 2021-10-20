@@ -1,0 +1,422 @@
+# -*- coding: utf-8 -*-
+__version__ = "0.2021.10.19"
+#__version__ = "0.2021.10.19"
+##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
+#import FreeCAD, FreeCADGui, Part
+#class WireFilter:
+#    def __init__(self, obj):
+#        obj.addExtension("Part::AttachExtensionPython")
+#        obj.addProperty("App::PropertyLinkSub","Source","WireFilter","Source of the wires, typically a sketch or a compound of sketches")
+#        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire) Set Use Selected to False to enable this property.")
+#        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
+#        obj.addProperty("App::PropertyEnumeration","FaceMaker","WireFilter","FaceMaker class to use to make face or No Face if no face")
+#        obj.FaceMaker = ["No Face","Part::FaceMakerBullseye", "Part::FaceMakerCheese","Part::FaceMakerSimple","Part::FaceMakerExtrusion"]
+#        obj.addProperty("App::PropertyFloat","Offset","Offsetting","2D offset in mm, < 0.0 = offset inwards, 0.0 = no offset, > 0.0 = offset outwards")
+#        obj.addProperty("App::PropertyEnumeration","OffsetJoin","Offsetting","Join method -- Arcs, Tangent, Intersection")
+#        obj.OffsetJoin = ["Arcs","Tangent","Intersection"]
+#        obj.addProperty("App::PropertyBool","OffsetFill","Offsetting", "Whether to fill offset space (makes a face if true)").OffsetFill = False
+#        obj.addProperty("App::PropertyBool","OffsetOpenResult","Offsetting","Whether to allow open result or to close result").OffsetOpenResult = False
+#        obj.addProperty("App::PropertyBool","OffsetIntersection","Offsetting","Whether to offset child wires/faces independently or collectively").OffsetIntersection = False
+#        obj.addProperty("App::PropertyVector","Scale","Scaling","Scale Factor: if 1,1,1, no scaling is done").Scale = FreeCAD.Vector(1,1,1)
+#        obj.addProperty("App::PropertyString","Version","WireFilter","Version of WireFilter used to create this object.").Version = __version__
+#        obj.addProperty("App::PropertyVector","Normal","WireFilter","Normal of Face1 or Wire1 if no face").Normal = FreeCAD.Vector(0,0,1)
+#        obj.addProperty("App::PropertyBool","FollowSource","WireFilter","If False, source's placement is ignored.").FollowSource = True
+#        obj.addProperty("App::PropertyBool","UseSelected","WireOrder","If True, use faces/edges/wires selected when object was first created (based on Source property)").UseSelected = True
+#        obj.addProperty("App::PropertyBool","UseDefault","WireOrder","[Trigger] sets wire order to default [1,2,3,4...] and resets itself to False").UseDefault = False
+#        obj.addProperty("App::PropertyStringList","SelectedEdges","SelectedEdges","Select some edges of this object and toggle SelectEdges trigger to True")
+#        obj.addProperty("App::PropertyBool","SelectEdges","SelectedEdges","[Trigger] adds selected edges to Selected Edges property").SelectEdges = False
+#        obj.addProperty("App::PropertyBool","UseSelectedEdges","SelectedEdges","If True, and if Selected Edges is populated, makes a wire from selected edges and uses that for this object's shape").UseSelectedEdges = False
+#        obj.Proxy = self
+#        obj.setEditorMode("WireOrder",1) #readonly to start, presuming UseSelected is True
+#        self.fpName = obj.Name
+#
+#    def onChanged(self,fp,prop):
+#        if prop == "WireOrder":
+#            self.setWireOrder(fp)
+#        elif prop == "UseDefault" and fp.UseDefault:
+#            fp.UseSelected = False
+#            fp.WireOrder = [] #will get set to defaults
+#        elif prop == "UseSelected" and fp.UseSelected:
+#            fp.setEditorMode("WireOrder",1)
+#        elif prop == "UseSelected" and not fp.UseSelected:
+#            fp.setEditorMode("WireOrder",0)
+#        elif prop == "SelectEdges" and fp.SelectEdges:
+#            fp.SelectEdges = False
+#            self.selectEdges(fp)
+#
+#    def selectEdges(self,fp):
+#        '''user will have selected some edges of this object in the 3D view and triggered this command'''
+#        selx = FreeCADGui.Selection.getSelectionEx()
+#        if not selx:
+#            FreeCAD.Console.PrintError("Nothing selected, select some edges of this WireFilter object to make a wire from.\n")
+#            return
+#        if not selx[0].Object == fp or len(selx)>1:
+#            FreeCAD.Console.PrintError("Select only edges from this object.\n")
+#            return
+#        edges = [sub for sub in selx[0].SubElementNames if "Edge" in sub]
+#        fp.SelectedEdges = edges
+#
+#    #borrowed from Draft.Clone scaling code
+#    def scale(self,fp,shp):
+#        m = FreeCAD.Matrix()
+#        if not shp.isNull():
+#            sx,sy,sz = fp.Scale
+#            if not fp.Scale.isEqual(FreeCAD.Vector(1, 1, 1),1e-7):
+#                op = shp.Placement
+#                shp.Placement = FreeCAD.Placement()
+#                m.scale(fp.Scale)
+#                if sx == sy == sz:
+#                    shp.transformShape(m)
+#                else:
+#                    shp = shp.transformGeometry(m)
+#                shp.Placement = op
+#        return shp
+#
+#    def offset(self,fp,shp):
+#        if fp.Offset == 0.0:
+#            return shp
+#        mapped = {"Arcs":0,"Tangent":1,"Intersection":2}
+#        join = mapped[fp.OffsetJoin]
+#        return(shp.makeOffset2D(fp.Offset,join,fp.OffsetFill,fp.OffsetOpenResult,fp.OffsetIntersection))
+#
+#    def setWireOrder(self,fp):
+#        '''user has adjusted WireOrder property.  Pad with 0's if some are missing'''
+#        if fp.Source:
+#            if len(fp.WireOrder) < len(fp.Source[0].Shape.Wires) and len(fp.WireOrder) != 0:
+#                needed = len(fp.Source[0].Shape.Wires) - len(fp.WireOrder)
+#                if needed != len(fp.Source[0].Shape.Wires):
+#                    fp.WireOrder += [0] * needed
+#                else:
+#                    fp.WireOrder = []
+#
+#    def fixWireOrder(self,fp,shp):
+#        '''if length of wires in shape has changed, reset wire order to default'''
+#        if len(fp.WireOrder) != len(shp.Wires):
+#            fp.WireOrder = range(1,len(shp.Wires)+1)
+#
+#    def isInWire(self,edge,wire):
+#        '''return True if edge is in wire'''
+#        edges = wire.Edges
+#        for e in edges:
+#            if e.isSame(edge) or e.isEqual(edge) or e.isPartner(edge):
+#                return True
+#        return False
+#
+#    def getWireDict(self,shape):
+#        '''returns a dictionary of form wire:[list of edge names]'''
+#        edgenames = {}
+#        wire_dict = {}
+#        for ee in range (0,len(shape.Edges)):
+#            edgenames[shape.Edges[ee]] = "Edge"+str(ee+1)
+#        for ww in range(0,len(shape.Wires)):
+#            wire_dict[ww+1] = []
+#            for k,v in edgenames.items():
+#                if self.isInWire(k, shape.Wires[ww]):
+#                    wire_dict[ww+1] += [v]
+#        return wire_dict
+#
+#    def executeUseSelectedEdges(self,fp,shp):
+#        edges = [getattr(shp,edgename) for edgename in fp.SelectedEdges]
+#        wire = Part.Wire(edges)
+#        wire = self.offset(fp,wire)
+#        wire = self.scale(fp,wire)
+#        if fp.FaceMaker != "No Face":
+#            face = Part.makeFace([wire],fp.FaceMaker)
+#            return face
+#        return wire
+#
+#    def execute(self,fp):
+#
+#        if not fp.Source:
+#            return
+#        shape = fp.Source[0].Shape.copy()
+#
+#        if fp.FollowSource and not shape.isNull():
+#            shape = shape.transformShape(shape.Placement.toMatrix(),True)
+#
+#        if fp.Source[1] and fp.UseSelected:
+#            faces = [name for name in fp.Source[1] if "Face" in name or "Wire" in name]
+#            if len(faces) != 0:
+#                shapes = [getattr(shape,f) for f in faces]
+#                shape = Part.makeCompound(shapes)
+#            else:
+#                #handle edges
+#                edges = [name for name in fp.Source[1] if "Edge" in name]
+#                if len(edges) != 0:
+#                    wire_dict = self.getWireDict(shape)
+#                    wire_order = [ww for ww in range(1,len(shape.Wires)+1)]
+#                    for k in range(1,len(shape.Wires)+1):
+#                        found = False
+#                        for en in wire_dict[k]: #en = edge names in this wire
+#                            for un in edges: #un = user name, edges user selected
+#                                if en == un:
+#                                    found = True
+#                                    break
+#                            if found:
+#                                break
+#                        if not found:
+#                            wire_order[k-1] = 0
+#                        else:
+#                            wire_order[k-1] = k
+#                    fp.WireOrder = wire_order
+#        wires = shape.Wires
+#        self.fixWireOrder(fp,shape)
+#
+#        reordered = [wires[ii-1] for ii in fp.WireOrder if ii != 0]
+#        if len(reordered) == 0:
+#            new_shape = Part.Shape()
+#        elif len(reordered)==1:
+#            new_shape = Part.makeCompound(reordered)
+#        elif len(reordered)>1:
+#            new_shape = reordered[0].fuse(reordered[1:])
+#
+#        if fp.FaceMaker != "No Face" and not fp.UseSelectedEdges:
+#            face = Part.makeFace(new_shape,fp.FaceMaker)
+#            new_shape = face
+#
+#        if not fp.UseSelectedEdges:
+#            new_shape = self.offset(fp,new_shape)
+#
+#        if not fp.UseSelectedEdges:
+#            new_shape = self.scale(fp,new_shape)
+#
+#        fp.positionBySupport()
+#        if fp.FollowSource and not new_shape.isNull():
+#            shape = new_shape.transformShape(shape.Placement.inverse().toMatrix(),True)
+#        elif not fp.FollowSource and not new_shape.isNull():
+#            shape = new_shape.transformShape(shape.Placement.inverse().toMatrix(),True)
+#            shape.Placement = FreeCAD.Placement()
+#
+#        if hasattr(shape,"Face1"):
+#            fp.Normal = shape.Face1.normalAt(0,0)
+#        elif hasattr(shape,"Wire1"):
+#            fp.Normal = Part.makeFace(shape.Wire1,"Part::FaceMakerBullseye").normalAt(0,0)
+#
+#        if fp.UseSelectedEdges and fp.SelectedEdges:
+#            shape = self.executeUseSelectedEdges(fp, shape)
+#
+#        fp.Shape = shape
+#
+#class WireFilterVP:
+#    def __init__(self, obj):
+#        '''Set this object to the proxy object of the actual view provider'''
+#        obj.Proxy = self
+#
+#    def attach(self,vobj):
+#        self.vobj = vobj
+#
+#    def onDelete(self, vobj, subelements):
+#        if vobj.Object.Source:
+#            vobj.Object.Source[0].ViewObject.Visibility = True
+#        return True
+#
+#    def updateData(self, fp, prop):
+#        '''If a property of the handled feature has changed we have the chance to handle this here'''
+#        pass
+#
+#    def getDisplayModes(self,obj):
+#        '''Return a list of display modes.'''
+#        modes=[]
+#        modes.append("Flat Lines")
+#        modes.append("Shaded")
+#        modes.append("Wireframe")
+#        return modes
+#
+#    def claimChildren(self):
+#        fp = self.vobj.Object
+#        if fp.Source and fp.ClaimChildren and not fp.Source[0].isDerivedFrom("PartDesign::Feature"):
+#            return [fp.Source[0]]
+#        else:
+#            return[]
+#
+#    def getDefaultDisplayMode(self):
+#        '''Return the name of the default display mode. It must be defined in getDisplayModes.'''
+#        return "Flat Lines"
+#
+#    def setDisplayMode(self,mode):
+#        '''Map the display mode defined in attach with those defined in getDisplayModes.\
+#                Since they have the same names nothing needs to be done. This method is optional'''
+#        return mode
+#
+#    def onChanged(self, vp, prop):
+#        '''Here we can do something when a single property got changed'''
+#        #FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
+#        pass
+#
+#    def getIcon(self):
+#        '''Return the icon in XPM format which will appear in the tree view. This method is\
+#                optional and if not defined a default icon is shown.'''
+#        return """
+#            /* XPM */
+#            static const char * DuplicateManagerVP_xpm[] = {
+#            "16 16 6 1",
+#            "   c None",
+#            ".  c #141010",
+#            "+  c #615BD2",
+#            "@  c #C39D55",
+#            "#  c #000000",
+#            "$  c #57C355",
+#            "        ........",
+#            "   ......++..+..",
+#            "   .@@@@.++..++.",
+#            "   .@@@@.++..++.",
+#            "   .@@  .++++++.",
+#            "  ..@@  .++..++.",
+#            "###@@@@ .++..++.",
+#            "##$.@@$#.++++++.",
+#            "#$#$.$$$........",
+#            "#$$#######      ",
+#            "#$$#$$$$$#      ",
+#            "#$$#$$$$$#      ",
+#            "#$$#$$$$$#      ",
+#            " #$#$$$$$#      ",
+#            "  ##$$$$$#      ",
+#            "   #######      "};
+#            """
+#
+#    def __getstate__(self):
+#        '''When saving the document this object gets stored using Python's json module.\
+#                Since we have some un-serializable parts here -- the Coin stuff -- we must define this method\
+#                to return a tuple of all serializable objects or None.'''
+#        return None
+#
+#    def __setstate__(self,state):
+#        '''When restoring the serialized object from document we have the chance to set some internals here.\
+#                Since no data were serialized nothing needs to be done here.'''
+#        return None
+
+
+
+########################################
+#CODE_ENDS_HERE
+
+BASENAME = 'wirefilter'
+
+def makeObject(WF):
+
+    doc = FreeCAD.ActiveDocument
+    selobj = FreeCADGui.Selection.getSelectionEx()
+    #wf = doc.addObject("Part::Part2DObjectPython","WireFilter")
+    wf = doc.addObject("Part::FeaturePython","WireFilter")
+    WF.WireFilter(wf)
+    WF.WireFilterVP(wf.ViewObject)
+
+    if selobj:
+        wf.Source = (selobj[0].Object,selobj[0].SubElementNames)
+        selobj[0].Object.ViewObject.Visibility = False
+        bodies = [obj for obj in doc.Objects if obj.isDerivedFrom("PartDesign::Body") and selobj[0].Object in obj.Group]
+        if len(bodies) == 1:
+            bodies[0].Group += [wf]
+        else:
+            parts = [obj for obj in doc.Objects if obj.TypeId == "App::Part" and selobj[0].Object in obj.Group]
+            if len(parts) == 1:
+                parts[0].Group += [wf]
+    else:
+        FreeCAD.Console.PrintError("No selection\n")
+
+
+
+#################
+def writeFile():
+    with open(py_file,"w") as outfile:
+        for line in code.splitlines():
+            if "#CODE_ENDS_HERE" in line:
+                break
+            if line.startswith('#'):
+                if line == "# -*- coding: utf-8 -*-":
+                    line = "#" + line
+                outfile.write(line[1:]+"\n") #skip first character (#)
+
+
+
+############
+#if __name__ == "__main__":
+#    makeObject(None)
+#    raise Exception("quick exit for testing/debugging")
+############
+
+if __name__ == "__main__":
+    import os
+    fin = open(__file__, 'r')
+    code = fin.read()
+    fin.close()
+    version = code.splitlines()[1][16:]
+    real_path = os.path.realpath(__file__)
+    dir_path = os.path.dirname(real_path)
+    py_file = real_path.replace(".FCMacro",".py").replace('WireFilter','wirefilter').replace('Wirefilter','wirefilter')
+    bHasFile = os.path.exists(py_file)
+    noImport = False #user elects not to save import file
+
+    if not bHasFile:
+        from PySide import QtGui
+        window = QtGui.QApplication.activeWindow()
+        mb = QtGui.QMessageBox()
+        mb.setWindowTitle(BASENAME+" setup")
+        mb.setIcon(mb.Information)
+        mb.setStandardButtons(mb.Ok | mb.Cancel)
+        mb.setDefaultButton(mb.Cancel)
+        okBtn = mb.button(QtGui.QMessageBox.StandardButton.Ok)
+        cancelBtn = mb.button(QtGui.QMessageBox.StandardButton.Cancel)
+        okBtn.setText("Create file")
+        cancelBtn.setText("Do not create file")
+        caption = "In order for "+BASENAME+" objects to be parametric after saving and reloading file\n\
+we need to create another file on this computer.  File to be created will be: \n\n"+py_file+"\n\n\
+This makes it available to the system upon restarting FreeCAD and loading documents containing the \
+"+BASENAME+" feature python objects.  Create file now?\n\n"
+        mb.setText(caption)
+        ret = mb.exec_()
+        if ret == mb.Ok:
+            writeFile()
+            QtGui.QMessageBox.information(window,"Success","File successfully created.  Please note: if you uninstall "+BASENAME+" macro you need to manually remove "+py_file+", too.\n")
+        else:
+            new_lines = []
+            for line in code.splitlines():
+                if line.startswith('#'):
+                    if "CODE_ENDS_HERE" in line:
+                        break
+                    if line == "# -*- coding: utf-8 -*-":
+                        new_lines.append(line+"\n")
+                        continue
+                    new_lines.append(line[1:]+"\n")
+            code = "".join(new_lines)
+
+            #credit to Mila Nautikus for his answer to a question on stackoverflow, which I modified here
+            #in this example the filename is pdwrapper.py
+            #https://stackoverflow.com/questions/5362771/how-to-load-a-module-from-code-in-a-string
+
+            ##########
+            import sys, importlib
+            my_name = 'wirefilter' #filename = wirefilter.py, so this must be 'wirefilter'
+            my_spec = importlib.util.spec_from_loader(my_name, loader=None)
+
+            wirefilter = importlib.util.module_from_spec(my_spec)
+
+            exec(code, wirefilter.__dict__)
+            sys.modules['wirefilter'] = wirefilter
+            makeObject(wirefilter)
+            noImport = True
+
+    if not noImport: #don't never use no double negatives
+        import addonmanager_utilities as utils
+        import wirefilter as WF
+        if WF.__version__ != __version__:
+            writeFile()
+            from PySide import QtCore,QtGui
+            window = QtGui.QApplication.activeWindow()
+            mbox = QtGui.QMessageBox()
+            mbox.setWindowTitle(BASENAME+" updated")
+
+            mbox.setText(BASENAME+".py has been updated to version "+__version__+". \
+You must restart FreeCAD for the new changes to take effect and to use the macro.")
+            mbox.setIcon(mbox.Warning)
+            mbox.setStandardButtons(mbox.Ok | mbox.Cancel)
+            mbox.setDefaultButton(mbox.Cancel)
+            okBtn = mbox.button(QtGui.QMessageBox.StandardButton.Ok)
+            cancelBtn = mbox.button(QtGui.QMessageBox.StandardButton.Cancel)
+            okBtn.setText("Restart now")
+            cancelBtn.setText("Restart later")
+            ret = mbox.exec_()
+            if ret == mbox.Ok:
+                QtCore.QTimer.singleShot(1000, utils.restart_freecad)
+        else:
+            makeObject(WF)
