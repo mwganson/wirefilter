@@ -5,6 +5,8 @@ With this FreeCAD macro you can filter a sketch (or any object with wires, inclu
 <br/>
 <a href="wirefilter_bullseye_example.FCStd">Download</a> the example file.<br/>
 <br/>
+## Installation
+WireFilter is not yet available in the addon manager.  To install, place the wirefilter.FCMacro file into your macro folder and run it.  On first run it asks to create a wirefilter.py file.  When wirefilter is updated it will also automatically update this .py file, but when you uninstall the WireFilter macro you need to delete the .py, too.
 ## Toolbar Icon
 <a href="wirefilter.svg">Download</a> the toolbar icon: <img src="wirefilter.svg" alt="toolbar icon">
 
