@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.10.19.rev2"
-#__version__ = "0.2021.10.19.rev2"
+__version__ = "0.2021.10.20"
+#__version__ = "0.2021.10.20"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
-#import FreeCAD, FreeCADGui, Part
+#import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
 #    def __init__(self, obj):
 #        obj.addExtension("Part::AttachExtensionPython")
@@ -26,7 +26,7 @@ __version__ = "0.2021.10.19.rev2"
 #        obj.addProperty("App::PropertyStringList","SelectedEdges","SelectedEdges","Select some edges of this object and toggle SelectEdges trigger to True")
 #        obj.addProperty("App::PropertyBool","SelectEdges","SelectedEdges","[Trigger] adds selected edges to Selected Edges property").SelectEdges = False
 #        obj.addProperty("App::PropertyBool","UseSelectedEdges","SelectedEdges","If True, and if Selected Edges is populated, makes a wire from selected edges and uses that for this object's shape").UseSelectedEdges = False
-#        obj.addProperty("App::PropertyBool","FixPadExtrudeNormal","WireFilter","[Trigger] Fix Pad or Extrude's custom direction if it can't find the normal correctly.").FixPadExtrudeNormal = False
+#        obj.addProperty("App::PropertyBool","FixNormal","WireFilter","[Trigger] Fix Pad or Extrude's custom direction if it can't find the normal correctly.").FixNormal = False
 #        obj.Proxy = self
 #        obj.setEditorMode("WireOrder",1) #readonly to start, presuming UseSelected is True
 #        self.fpName = obj.Name
@@ -44,11 +44,11 @@ __version__ = "0.2021.10.19.rev2"
 #        elif prop == "SelectEdges" and fp.SelectEdges:
 #            fp.SelectEdges = False
 #            self.selectEdges(fp)
-#        elif prop == "FixPadExtrudeNormal" and fp.FixPadExtrudeNormal:
-#            fp.FixPadExtrudeNormal = False
-#            self.fixPadExtrudeNormal(fp)
+#        elif prop == "FixNormal" and fp.FixNormal:
+#            fp.FixNormal = False
+#            self.fixNormal(fp)
 #
-#    def fixPadExtrudeNormal(self,fp):
+#    def fixNormal(self,fp):
 #        '''fixes a Pad or Extrude if it cannot find the correct normal direction for extruding'''
 #        inlist = fp.InList
 #        pads = [obj for obj in inlist if obj.TypeId == "PartDesign::Pad" and obj.Profile and obj.Profile[0] == fp]
@@ -143,8 +143,12 @@ __version__ = "0.2021.10.19.rev2"
 #            return face
 #        return wire
 #
-#    def execute(self,fp):
+#    def wireIsPlanar(self, wire):
+#        '''check if the wire is planar and return true/false'''
+#        import DraftGeomUtils as dgu
+#        return dgu.is_planar(wire)
 #
+#    def execute(self,fp):
 #        if not fp.Source:
 #            return
 #        shape = fp.Source[0].Shape.copy()
@@ -207,8 +211,12 @@ __version__ = "0.2021.10.19.rev2"
 #
 #        if hasattr(shape,"Face1"):
 #            fp.Normal = shape.Face1.normalAt(0,0)
-#        elif hasattr(shape,"Wire1"):
+##            FreeCAD.Console.PrintMessage("Normal found at: "+str(fp.Normal)+"\n")
+#        elif hasattr(shape,"Wire1") and self.wireIsPlanar(shape.Wire1):
 #            fp.Normal = Part.makeFace(shape.Wire1,"Part::FaceMakerBullseye").normalAt(0,0)
+##            FreeCAD.Console.PrintMessage("Normal found at: "+str(fp.Normal)+"\n")
+#        else:
+#            FreeCAD.Console.PrintWarning("Unable to find Normal of Wire1\n")
 #
 #        if fp.UseSelectedEdges and fp.SelectedEdges:
 #            shape = self.executeUseSelectedEdges(fp, shape)
