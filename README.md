@@ -1,5 +1,10 @@
 # WireFilter
-With this FreeCAD macro you can filter a sketch (or any object with wires, including solids) to use only the wires you desire to use.  The sketch itself is unchanged.  The filter acts as an intermediary.  You can also 2D offset the wires, reorder the wires, scale the wires (independently in x, y, z directions), choose among 4 different face makers, and form a new wire from selected edges.  When used in Part Design it automatically inserts itself into the parent body of the selected sketch.  With WireFilter you can use Pad on sketches it would otherwise not be able to use (if it has nested wires within nested wires, for example if you make a face using the FaceMakerBullseye option).
+With this FreeCAD macro you can filter a sketch (or any object with wires, including solids) to use only the wires you desire to use.  The sketch itself is unchanged.  The filter acts as an intermediary.  You can also 2D offset the wires, reorder the wires, scale the wires (independently in x, y, z directions), choose among 4 different face makers, and form a new wire from selected edges.  When used in Part Design it automatically inserts itself into the parent body of the selected sketch.  With WireFilter you can use Pad on sketches it would otherwise not be able to use (if it has nested wires within nested wires, for example if you make a face using the FaceMakerBullseye option).<br/>
+<br/>
+<img src="wirefilter_scr1.png" alt="bullseye example screenshot"><br/>
+<br/>
+<a href="wirefilter_bullseye_example.FCStd">Download</a> the example file.<br/>
+<br/>
 ## Toolbar Icon
 <a href="wirefilter.svg">Download</a> the toolbar icon: <img src="wirefilter.svg" alt="toolbar icon">
 
