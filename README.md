@@ -33,6 +33,8 @@ Default: False.  Whether to allow an open wire in the results.  If False open wi
 We can scale independently along all 3 major axes, x, y, and z.  -1 will mirror along that axis.
 #### Scale (vector)
 Default: (1,1,1).  The scale to use for the x, y, and z directions.  (Code borrowed / liberated / stolen from Draft Clone code.
+#### Uniform Scale (float)
+Default: 1.0.  Scale equally in all directions.  With 2D wires, Z is ignored during the scaling.  The XYZ scaling above doesn't recenter the object, but this one does, so use it where you want to keep the scaled object centered with the original.
 ### Selected Edges
 After the initial filtering of the wires from the original object, we can then filter edges to use in the WireFilter object itself.  A wire is created from the selected edges and that is the only wire displayed.  A face can be made from the wire.  It can also be offset and scaled.  Usage: select the edges in the 3D view, then toggle the Select Edges trigger from False to True to populate the Selected Edges property (a string list holding the names of the selected edges).  Then set Use Selected Edges to True to enable this feature.
 #### Select Edges (boolean trigger)
@@ -72,6 +74,8 @@ Another usage for this property is to enable/disable certain wires.  Setting a w
 It is known that sometimes Pad, Extrude, and Pocket cannot find the proper normal for the WireFilter.  If it's a Pad or an Extrude you can use FixNormal to try to fix the Pad or Extrude by setting its custom direction to the wires true normal.  For Pockets, there currently is no option for using custom directions.  You can try creating a Draft facebinder of the WireFilter and using that for the Pocket's profile. Sometimes this works, but sometimes not.  I am hopeful that at some point in the 0.20 development cycle Pocket's will get this Custom direction property and I'll be able to use it to fix problematic Pockets, too.
 
 ## Changelog
+##### 0.2021.10.22
+Add UniformScale property
 ##### 0.2021.10.20.rev2
 Check wire is closed before trying to find normal.
 ##### 0.2021.10.19.rev2
