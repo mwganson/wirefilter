@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.10.20.rev2"
-#__version__ = "0.2021.10.20.rev2"
+__version__ = "0.2021.10.22"
+#__version__ = "0.2021.10.22"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
@@ -27,19 +27,19 @@ __version__ = "0.2021.10.20.rev2"
 #        obj.addProperty("App::PropertyBool","SelectEdges","SelectedEdges","[Trigger] adds selected edges to Selected Edges property").SelectEdges = False
 #        obj.addProperty("App::PropertyBool","UseSelectedEdges","SelectedEdges","If True, and if Selected Edges is populated, makes a wire from selected edges and uses that for this object's shape").UseSelectedEdges = False
 #        obj.addProperty("App::PropertyBool","FixNormal","WireFilter","[Trigger] Fix Pad or Extrude's custom direction if it can't find the normal correctly.").FixNormal = False
+#        obj.addProperty("App::PropertyFloat","UniformScale","Scaling","Scale the WireFilter uniformly.  Keeps it centered, too.").UniformScale = 1.0
 #        obj.Proxy = self
-#        obj.setEditorMode("WireOrder",1) #readonly to start, presuming UseSelected is True
 #        self.fpName = obj.Name
 #
 #    def onChanged(self,fp,prop):
 #        if prop == "WireOrder":
 #            self.setWireOrder(fp)
-#        elif prop == "UseDefault" and fp.UseDefault:
+#        elif prop == "UseDefault" and fp.UseDefault and hasattr(fp,"WireOrder"):
 #            fp.UseSelected = False
 #            fp.WireOrder = [] #will get set to defaults
-#        elif prop == "UseSelected" and fp.UseSelected:
+#        elif prop == "UseSelected" and fp.UseSelected and hasattr(fp,"WireOrder"):
 #            fp.setEditorMode("WireOrder",1)
-#        elif prop == "UseSelected" and not fp.UseSelected:
+#        elif prop == "UseSelected" and not fp.UseSelected and hasattr(fp,"WireOrder"):
 #            fp.setEditorMode("WireOrder",0)
 #        elif prop == "SelectEdges" and fp.SelectEdges:
 #            fp.SelectEdges = False
@@ -88,6 +88,8 @@ __version__ = "0.2021.10.20.rev2"
 #                else:
 #                    shp = shp.transformGeometry(m)
 #                shp.Placement = op
+#            if not fp.UniformScale == 1.0:
+#                shp.scale(fp.UniformScale,shp.BoundBox.Center)
 #        return shp
 #
 #    def offset(self,fp,shp):
