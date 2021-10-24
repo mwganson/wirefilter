@@ -52,6 +52,8 @@ Default: No Face.  Options: No Face, Part::FaceMakerBullseye, Part::FaceMakerChe
 Triggers a command, sets itself back to False.  The command is to attempt to fix a Pad or Extrude that has failed to determine the correct normal for a WireFilter pad or extrusion.  The WireFilter object computes its own normal.  (See Normal property.)  This Normal is used as a custom direction in the Pad or Extrude object.  If this doesn't work, try making a face and doing it again.
 #### Follow Source (boolean)
 Default: True.  If True, the WireFilter object's shape is at the same placement as the original object.  If the source object moves, the WireFilter moves with it.  Set this to False if you want to be able to place the WireFilter in another placement.  The WireFilter itself can be attached.
+#### Max Wires (integer)
+Default: 25.  This is to prevent locking up FreeCAD for a long time if trying to use a complex source with many wires.  Only Max Wires count of wires will be used.
 #### Normal (vector)
 The normal direction for Wire1 / Face1 of the WireFilter object.  Normal means perpendicular to the plane of the wire / face.  If you imagine the surface of a tabletop, the normal direction would be straight up to the ceiling overhead.  If you're standing in front of your refrigerator, the normal of the front face of the refrigerator is coming towards your position.
 #### Source (sublink)
@@ -74,6 +76,8 @@ Another usage for this property is to enable/disable certain wires.  Setting a w
 It is known that sometimes Pad, Extrude, and Pocket cannot find the proper normal for the WireFilter.  If it's a Pad or an Extrude you can use FixNormal to try to fix the Pad or Extrude by setting its custom direction to the wires true normal.  For Pockets, there currently is no option for using custom directions.  You can try creating a Draft facebinder of the WireFilter and using that for the Pocket's profile. Sometimes this works, but sometimes not.  I am hopeful that at some point in the 0.20 development cycle Pocket's will get this Custom direction property and I'll be able to use it to fix problematic Pockets, too.
 
 ## Changelog
+##### 0.2021.10.24
+Add Max Wires property
 ##### 0.2021.10.22
 Add UniformScale property
 ##### 0.2021.10.20.rev2
