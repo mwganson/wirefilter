@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.10.22"
-#__version__ = "0.2021.10.22"
+__version__ = "0.2021.10.24"
+#__version__ = "0.2021.10.24"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
 #    def __init__(self, obj):
 #        obj.addExtension("Part::AttachExtensionPython")
+#        obj.addProperty("App::PropertyInteger","MaxWires","WireFilter","Maximum number of wires to use (prevents hanging on complex sources)").MaxWires = 25
 #        obj.addProperty("App::PropertyLinkSub","Source","WireFilter","Source of the wires, typically a sketch or a compound of sketches")
 #        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire) Set Use Selected to False to enable this property.")
 #        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
@@ -113,6 +114,8 @@ __version__ = "0.2021.10.22"
 #        '''if length of wires in shape has changed, reset wire order to default'''
 #        if len(fp.WireOrder) != len(shp.Wires):
 #            fp.WireOrder = range(1,len(shp.Wires)+1)
+#            if hasattr(fp,"MaxWires") and len(fp.WireOrder) > fp.MaxWires:
+#                fp.WireOrder = fp.WireOrder[:fp.MaxWires]
 #
 #    def isInWire(self,edge,wire):
 #        '''return True if edge is in wire'''
@@ -122,13 +125,16 @@ __version__ = "0.2021.10.22"
 #                return True
 #        return False
 #
-#    def getWireDict(self,shape):
+#    def getWireDict(self,shape,maxWires):
 #        '''returns a dictionary of form wire:[list of edge names]'''
 #        edgenames = {}
 #        wire_dict = {}
 #        for ee in range (0,len(shape.Edges)):
 #            edgenames[shape.Edges[ee]] = "Edge"+str(ee+1)
-#        for ww in range(0,len(shape.Wires)):
+#        wire_count = len(shape.Wires)
+#        if wire_count > maxWires:
+#            wire_count = maxWires
+#        for ww in range(0,wire_count):
 #            wire_dict[ww+1] = []
 #            for k,v in edgenames.items():
 #                if self.isInWire(k, shape.Wires[ww]):
@@ -158,6 +164,9 @@ __version__ = "0.2021.10.22"
 #        if fp.FollowSource and not shape.isNull():
 #            shape = shape.transformShape(shape.Placement.toMatrix(),True)
 #
+#        wire_count = len(shape.Wires)
+#        if hasattr(fp,"MaxWires") and wire_count > fp.MaxWires:
+#            wire_count = fp.MaxWires
 #        if fp.Source[1] and fp.UseSelected:
 #            faces = [name for name in fp.Source[1] if "Face" in name or "Wire" in name]
 #            if len(faces) != 0:
@@ -167,9 +176,9 @@ __version__ = "0.2021.10.22"
 #                #handle edges
 #                edges = [name for name in fp.Source[1] if "Edge" in name]
 #                if len(edges) != 0:
-#                    wire_dict = self.getWireDict(shape)
-#                    wire_order = [ww for ww in range(1,len(shape.Wires)+1)]
-#                    for k in range(1,len(shape.Wires)+1):
+#                    wire_dict = self.getWireDict(shape,fp.MaxWires)
+#                    wire_order = [ww for ww in range(1,wire_count+1)]
+#                    for k in range(1,wire_count+1):
 #                        found = False
 #                        for en in wire_dict[k]: #en = edge names in this wire
 #                            for un in edges: #un = user name, edges user selected
@@ -184,6 +193,9 @@ __version__ = "0.2021.10.22"
 #                            wire_order[k-1] = k
 #                    fp.WireOrder = wire_order
 #        wires = shape.Wires
+#        if hasattr(fp,"MaxWires") and len(wires) > fp.MaxWires:
+#            wires = wires[:fp.MaxWires]
+#            FreeCAD.Console.PrintWarning("MaxWires ("+str(fp.MaxWires)+") exceeded.  Source has "+str(len(shape.Wires))+" wires.  Set MaxWires property higher if you want to use all the wires.\n")
 #        self.fixWireOrder(fp,shape)
 #
 #        reordered = [wires[ii-1] for ii in fp.WireOrder if ii != 0]
