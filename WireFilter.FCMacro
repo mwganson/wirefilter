@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.10.24"
-#__version__ = "0.2021.10.24"
+__version__ = "0.2021.11.21"
+#__version__ = "0.2021.11.21"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
@@ -52,11 +52,13 @@ __version__ = "0.2021.10.24"
 #    def fixNormal(self,fp):
 #        '''fixes a Pad or Extrude if it cannot find the correct normal direction for extruding'''
 #        inlist = fp.InList
-#        pads = [obj for obj in inlist if obj.TypeId == "PartDesign::Pad" and obj.Profile and obj.Profile[0] == fp]
+#        pads = [obj for obj in inlist if hasattr(obj,"UseCustomVector") and bool(obj.TypeId == "PartDesign::Pad" or obj.TypeId == "PartDesign::Pocket") and obj.Profile and obj.Profile[0] == fp]
 #        if len(pads) != 0:
 #            for pad in pads:
 #                pad.UseCustomVector = True
 #                pad.Direction = fp.Normal
+#                if pad.TypeId == "PartDesign::Pocket":
+#                    pad.Direction = fp.Normal * -1
 #        extrudes = [obj for obj in inlist if obj.TypeId == "Part::Extrusion" and obj.Base and obj.Base == fp]
 #        if len(extrudes) != 0:
 #            for ext in extrudes:
