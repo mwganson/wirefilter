@@ -83,6 +83,10 @@ Another usage for this property is to enable/disable certain wires.  Setting a w
 It is known that sometimes Pad, Extrude, and Pocket cannot find the proper normal for the WireFilter.  If it's a Pad or an Extrude you can use FixNormal to try to fix the Pad or Extrude by setting its custom direction to the wires true normal.  For Pockets, there currently is no option for using custom directions.  You can try creating a Draft facebinder of the WireFilter and using that for the Pocket's profile. Sometimes this works, but sometimes not.  I am hopeful that at some point in the 0.20 development cycle Pocket's will get this Custom direction property and I'll be able to use it to fix problematic Pockets, too.
 
 ## Changelog
+##### 0.2021.12.6.rev2
+Remove Colorize From Source option, wasn't working correctly anyway
+##### 0.2021.12.6
+Add colorize option.
 ##### 0.2021.11.21
 Support FixNormal for PartDesign::Pockets since they now can use custom directions in latest 0.20 builds.
 ##### 0.2021.10.24
