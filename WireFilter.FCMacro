@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.12.6"
-#__version__ = "0.2021.12.6"
+__version__ = "0.2021.12.6.rev2"
+#__version__ = "0.2021.12.6.rev2"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
@@ -12,7 +12,6 @@ __version__ = "0.2021.12.6"
 #        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire) Set Use Selected to False to enable this property.")
 #        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
 #        obj.addProperty("App::PropertyBool","Colorize","WireColors","Whether to colorize wires").Colorize=True
-#        obj.addProperty("App::PropertyBool","ColorizeFromSource","WireColors","Colorize based on source if True, else based on final WireFilter wire set").ColorizeFromSource=False
 #        obj.addProperty("App::PropertyEnumeration","FaceMaker","WireFilter","FaceMaker class to use to make face or No Face if no face")
 #        obj.FaceMaker = ["No Face","Part::FaceMakerBullseye", "Part::FaceMakerCheese","Part::FaceMakerSimple","Part::FaceMakerExtrusion"]
 #        obj.addProperty("App::PropertyFloat","Offset","Offsetting","2D offset in mm, < 0.0 = offset inwards, 0.0 = no offset, > 0.0 = offset outwards")
@@ -299,9 +298,6 @@ __version__ = "0.2021.12.6"
 #
 #        if not hasattr(fp,"Colorize"): #object made with earlier version of WireFilter macro
 #            return
-#
-#        if fp.ColorizeFromSource:
-#            self.colorize(fp,fp.Source[0].Shape)
 #        else:
 #            self.colorize(fp,fp.Shape)
 #
