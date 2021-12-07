@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.11.21"
-#__version__ = "0.2021.11.21"
+__version__ = "0.2021.12.6"
+#__version__ = "0.2021.12.6"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
 #    def __init__(self, obj):
 #        obj.addExtension("Part::AttachExtensionPython")
 #        obj.addProperty("App::PropertyInteger","MaxWires","WireFilter","Maximum number of wires to use (prevents hanging on complex sources)").MaxWires = 25
+#        obj.addProperty("App::PropertyIntegerConstraint","ColorKeyCount","WireColors","Number of color key properties to create").ColorKeyCount = (8,0,138,1)
 #        obj.addProperty("App::PropertyLinkSub","Source","WireFilter","Source of the wires, typically a sketch or a compound of sketches")
 #        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire) Set Use Selected to False to enable this property.")
 #        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
+#        obj.addProperty("App::PropertyBool","Colorize","WireColors","Whether to colorize wires").Colorize=True
+#        obj.addProperty("App::PropertyBool","ColorizeFromSource","WireColors","Colorize based on source if True, else based on final WireFilter wire set").ColorizeFromSource=False
 #        obj.addProperty("App::PropertyEnumeration","FaceMaker","WireFilter","FaceMaker class to use to make face or No Face if no face")
 #        obj.FaceMaker = ["No Face","Part::FaceMakerBullseye", "Part::FaceMakerCheese","Part::FaceMakerSimple","Part::FaceMakerExtrusion"]
 #        obj.addProperty("App::PropertyFloat","Offset","Offsetting","2D offset in mm, < 0.0 = offset inwards, 0.0 = no offset, > 0.0 = offset outwards")
@@ -48,6 +51,22 @@ __version__ = "0.2021.11.21"
 #        elif prop == "FixNormal" and fp.FixNormal:
 #            fp.FixNormal = False
 #            self.fixNormal(fp)
+
+#
+#    def clearColorKeys(self,fp):
+#        for p in fp.PropertiesList:
+#            if "Wire" in p and "Color" in p:
+#                fp.removeProperty(p)
+#
+#    def setColorKeys(self,fp):
+#        self.clearColorKeys(fp)
+#        if not hasattr(fp,"ColorKeyCount"):
+#            return #object made with earlier version of WireFilter macro
+#        for ii in range (1,fp.ColorKeyCount+1):
+#            if not hasattr(fp,"Wire"+format(ii,"03")+"Color"):
+#                fp.addProperty("App::PropertyColor","Wire"+format(ii,"03")+"Color","WireColors","Wire color keys, (some edges may belong to more than one wire\nin which case the last wire color set takes precedence)\nHint: select vertex in 3D view so edge colors are viewable.")
+#                setattr(fp,"Wire"+format(ii,"03")+"Color",self.colorize(fp,Part.Shape(),True,ii))
+#                fp.setEditorMode("Wire"+format(ii,"03")+"Color",1) # readonly
 #
 #    def fixNormal(self,fp):
 #        '''fixes a Pad or Extrude if it cannot find the correct normal direction for extruding'''
@@ -158,9 +177,48 @@ __version__ = "0.2021.11.21"
 #        import DraftGeomUtils as dgu
 #        return dgu.is_planar(wire)
 #
+#    def colorize(self,fp,shape,getColor = False,idx = -1):
+#        '''assign colors to individual wires if Colorize = True'''
+#        from PySide.QtGui import QColor
+#        def color(s):
+#            return QColor(s).getRgbF()
+#        colors = ["red","green","blue","cyan","magenta","yellow","orange","light green","purple","gray","dark red"]
+#        colorNames = QColor.colorNames() #color name strings supported by Qt
+#        colorNames.remove("black") # will be default color for edges if we run out of colors
+#        for c in colorNames:
+#            if not c in colors:
+#                colors.append(c)
+#        cL = [] #color list of tuples, eg. red is (1.0,0.0,0.0,1.0) rgba
+#        colorDuplicates = [] #sometimes the name is different, but the color is the same
+#        for cn in colors:
+#            if not color(cn) in cL:
+#                cL.append(color(cn))
+#            else:
+#                colorDuplicates.append(cn)
+#        for cd in colorDuplicates:
+#            colors.remove(cd)
+#        if getColor:
+#            return cL[idx -1]
+#        if not fp.Colorize:
+#            fp.ViewObject.LineColorArray = [color("black")]
+#            return
+#        edgeCount = len(shape.Edges)
+#        if edgeCount > len(cL):
+#            cL = cL+[color("black")]*(edgeCount - len(cL)) #extend cL with extra black colors
+#            FreeCAD.Console.PrintWarning("Too many wires for the number of colors in the color list, extra wires will all be black\n")
+#        wireDict = self.getWireDict(shape,len(shape.Wires))
+#        cLArray = [None]*edgeCount
+#        for k,vals in enumerate(wireDict.values()):
+#            numbers = [int(val.replace("Edge",""))-1 for val in vals]
+#            FreeCAD.Console.PrintMessage(f"Wire{k+1} set to {colors[k]}\n")
+#            for num in numbers:
+#                cLArray[num] = cL[k]
+#        fp.ViewObject.LineColorArray = cLArray
+#
 #    def execute(self,fp):
 #        if not fp.Source:
 #            return
+#        self.setColorKeys(fp)
 #        shape = fp.Source[0].Shape.copy()
 #
 #        if fp.FollowSource and not shape.isNull():
@@ -238,6 +296,14 @@ __version__ = "0.2021.11.21"
 #            shape = self.executeUseSelectedEdges(fp, shape)
 #
 #        fp.Shape = shape
+#
+#        if not hasattr(fp,"Colorize"): #object made with earlier version of WireFilter macro
+#            return
+#
+#        if fp.ColorizeFromSource:
+#            self.colorize(fp,fp.Source[0].Shape)
+#        else:
+#            self.colorize(fp,fp.Shape)
 #
 #class WireFilterVP:
 #    def __init__(self, obj):
