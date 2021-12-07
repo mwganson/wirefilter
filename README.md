@@ -66,7 +66,8 @@ As of version 0.2021.12.6 individual wires are now color-coded in the 3D view.  
 Numer of wire color key properties to create.  Default: 8.  Note: these color properties are for information only and are readonly.  This way you can compare the colors of these key properties to what you see in the 3D view to hopefully aid in identifying which edges belong to which wires.
 #### Colorize (boolean)
 Default: True.  Set to False to disable the colorize feature.  All wires will be default black color.
-
+#### WireNNN Color (color, readonly)
+For information only, readonly property.  These act as keys so you can see the color of each wire by comparing the color of these properties with what you see in the 3D view.  Note: Selecting a vertex of the WireFilter object instead of the entire object makes the edges visible in these colors rather than the green associated with indicating the object has been selected.
 ### Wire Order
 WireFilter can modify the order of the wires used.  This can be useful where in a loft the wires are crossed.  You can change the wire order rather than edit one of the sketches.  Using 0 for a wire means don't use that wire at all, so this is a good way to filter out some wires, by setting their wire order to 0.
 #### Use Default (boolean trigger)
