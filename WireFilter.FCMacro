@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.12.6.rev2"
-#__version__ = "0.2021.12.6.rev2"
+__version__ = "0.2021.12.6.rev3"
+#__version__ = "0.2021.12.6.rev3"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
@@ -50,7 +50,6 @@ __version__ = "0.2021.12.6.rev2"
 #        elif prop == "FixNormal" and fp.FixNormal:
 #            fp.FixNormal = False
 #            self.fixNormal(fp)
-
 #
 #    def clearColorKeys(self,fp):
 #        for p in fp.PropertiesList:
@@ -201,6 +200,8 @@ __version__ = "0.2021.12.6.rev2"
 #        if not fp.Colorize:
 #            fp.ViewObject.LineColorArray = [color("black")]
 #            return
+#        if not len(shape.Wires):
+#            return #no wires
 #        edgeCount = len(shape.Edges)
 #        if edgeCount > len(cL):
 #            cL = cL+[color("black")]*(edgeCount - len(cL)) #extend cL with extra black colors
