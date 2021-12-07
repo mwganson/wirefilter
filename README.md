@@ -60,6 +60,13 @@ The normal direction for Wire1 / Face1 of the WireFilter object.  Normal means p
 The Source is the object from which the wires are being filter, example -- Sketch.  Optionally, this can also include individual faces or edges.  Select the face of a cube and run the macro.  The WireFilter will use the wire from which that face was made and exclude all the other wires in that cube.  If edges are selected, then all wires associated with those edges are used.  In a cube each edge is associated with 2 wires.  For example, if you select the top front edge then you get the top face wire and front face wire. Try it!  This can be done most easily when first making the WireFilter, but you can also edit this property after creation.  This is a very powerful feature becaus with it you can very easily pre-select certain wires to use in the WireFilter.
 #### Version (string)
 The version of the WireFilter macro used in creating this WireFilter object, not necessarily the same as installed currently.
+### Wire Colors (group)
+As of version 0.2021.12.6 individual wires are now color-coded in the 3D view.  Each edge of the wire gets the same color, beginning with red, green, blue, etc. for Wire1, Wire2, Wire3, and so on.  Set Colorize property to False to disable this feature.  Note: in some cases an edge may belong to more than one wire.  In such cases the last wire color to be set will take precedence.  For example, if Edge1 belongs to both Wire1 and Wire2, then Edge1 will be set to green because the edges in Wire2 get set later than the edges in Wire1, and those previously set colors get overwritten.
+#### Color Key Count (integer)
+Numer of wire color key properties to create.  Default: 8.  Note: these color properties are for information only and are readonly.  This way you can compare the colors of these key properties to what you see in the 3D view to hopefully aid in identifying which edges belong to which wires.
+#### Colorize (boolean)
+Default: True.  Set to False to disable the colorize feature.  All wires will be default black color.
+
 ### Wire Order
 WireFilter can modify the order of the wires used.  This can be useful where in a loft the wires are crossed.  You can change the wire order rather than edit one of the sketches.  Using 0 for a wire means don't use that wire at all, so this is a good way to filter out some wires, by setting their wire order to 0.
 #### Use Default (boolean trigger)
