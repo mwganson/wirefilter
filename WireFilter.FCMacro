@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.12.6.rev3"
-#__version__ = "0.2021.12.6.rev3"
+__version__ = "0.2021.12.13"
+#__version__ = "0.2021.12.13"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
@@ -13,7 +13,8 @@ __version__ = "0.2021.12.6.rev3"
 #        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
 #        obj.addProperty("App::PropertyBool","Colorize","WireColors","Whether to colorize wires").Colorize=True
 #        obj.addProperty("App::PropertyEnumeration","FaceMaker","WireFilter","FaceMaker class to use to make face or No Face if no face")
-#        obj.FaceMaker = ["No Face","Part::FaceMakerBullseye", "Part::FaceMakerCheese","Part::FaceMakerSimple","Part::FaceMakerExtrusion"]
+#        obj.FaceMaker = ["No Face","Part::FaceMakerBullseye", "Part::FaceMakerCheese","Part::FaceMakerSimple","Part::FaceMakerExtrusion","InvertedFace"]
+#        obj.addProperty("App::PropertyFloat","InvertedFaceScale","WireFilter","(InvertedFace Face Maker only) 2D scaling used for creating outer face from which original face is cut").InvertedFaceScale = 5
 #        obj.addProperty("App::PropertyFloat","Offset","Offsetting","2D offset in mm, < 0.0 = offset inwards, 0.0 = no offset, > 0.0 = offset outwards")
 #        obj.addProperty("App::PropertyEnumeration","OffsetJoin","Offsetting","Join method -- Arcs, Tangent, Intersection")
 #        obj.OffsetJoin = ["Arcs","Tangent","Intersection"]
@@ -160,13 +161,23 @@ __version__ = "0.2021.12.6.rev3"
 #                    wire_dict[ww+1] += [v]
 #        return wire_dict
 #
+#    def makeInvertedFace(self,fp,wire):
+#        faceOriginal = Part.makeFace(wire,"Part::FaceMakerBullseye")
+#        faceOuter = Part.makeFace(faceOriginal.OuterWire,"Part::FaceMakerCheese")
+#        offset = faceOuter.scale(fp.InvertedFaceScale, faceOuter.CenterOfGravity)
+#        cut = offset.cut(faceOriginal)
+#        return cut
+#
 #    def executeUseSelectedEdges(self,fp,shp):
 #        edges = [getattr(shp,edgename) for edgename in fp.SelectedEdges]
 #        wire = Part.Wire(edges)
 #        wire = self.offset(fp,wire)
 #        wire = self.scale(fp,wire)
 #        if fp.FaceMaker != "No Face":
-#            face = Part.makeFace([wire],fp.FaceMaker)
+#            if fp.Facemaker != "InvertedFace":
+#                face = Part.makeFace([wire],fp.FaceMaker)
+#            else:
+#                face = self.makeInvertedFace(fp,[wire])
 #            return face
 #        return wire
 #
@@ -267,7 +278,10 @@ __version__ = "0.2021.12.6.rev3"
 #            new_shape = reordered[0].fuse(reordered[1:])
 #
 #        if fp.FaceMaker != "No Face" and not fp.UseSelectedEdges:
-#            face = Part.makeFace(new_shape,fp.FaceMaker)
+#            if fp.FaceMaker != "InvertedFace":
+#                face = Part.makeFace(new_shape,fp.FaceMaker)
+#            else:
+#                face = self.makeInvertedFace(fp,new_shape)
 #            new_shape = face
 #
 #        if not fp.UseSelectedEdges:
