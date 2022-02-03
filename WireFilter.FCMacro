@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2021.12.13"
-#__version__ = "0.2021.12.13"
+__version__ = "0.2022.02.03"
+#__version__ = "0.2022.02.03"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #class WireFilter:
@@ -174,7 +174,7 @@ __version__ = "0.2021.12.13"
 #        wire = self.offset(fp,wire)
 #        wire = self.scale(fp,wire)
 #        if fp.FaceMaker != "No Face":
-#            if fp.Facemaker != "InvertedFace":
+#            if fp.FaceMaker != "InvertedFace":
 #                face = Part.makeFace([wire],fp.FaceMaker)
 #            else:
 #                face = self.makeInvertedFace(fp,[wire])
