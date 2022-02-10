@@ -47,7 +47,7 @@ Default: False.  If True and if Selected Edges property is not empty, the select
 #### Claim Children (boolean)
 Default: True.  Whether to claim children in the tree view.  You may toggle this to see the effect.
 #### Face Maker (enumeration)
-Default: No Face.  Options: No Face, Part::FaceMakerBullseye, Part::FaceMakerCheese, Part::FaceMakerSimple, Part::FaceMakerExtrusion, InvertedFace.  Each has its strengths and limitations.  Sometimes when one fails another might work.  Bullseye is good at handling holes inside of holes in faces.  None of the others can do this.  Cheese is good as multiple holes, but not nested holes.  Simple and Extrusion fail with holes, but can manage some nonplanar wires where Bullseye and Cheese fail.  InvertedFace is a new custom type that creates a new inverted face.  The outer wire of the original face is scaled to InvertedFaceScale property, a face is made from that scaled outer wire and the original face cut from it to make the inverted face.
+Default: No Face.  Options: No Face, Part::FaceMakerBullseye, Part::FaceMakerCheese, Part::FaceMakerSimple, Part::FaceMakerExtrusion, InvertedFace.  Each has its strengths and limitations.  Sometimes when one fails another might work.  Bullseye is good at handling holes inside of holes in faces.  None of the others can do this.  Cheese is good as multiple holes, but not nested holes.  Simple and Extrusion fail with holes, but can manage some nonplanar wires where Bullseye and Cheese fail.  InvertedFace is a new custom type that creates a new inverted face.  The outer wire of the original face is scaled to InvertedFaceScale property, a face is made from that scaled outer wire and the original face cut from it to make the inverted face.  The FilledFace type uses Part.makeFilledFace(), which can make nonplanar faces.
 #### Fix Normal (boolean trigger)
 Triggers a command, sets itself back to False.  The command is to attempt to fix a Pad or Extrude that has failed to determine the correct normal for a WireFilter pad or extrusion.  The WireFilter object computes its own normal.  (See Normal property.)  This Normal is used as a custom direction in the Pad or Extrude object.  If this doesn't work, try making a face and doing it again.
 #### Follow Source (boolean)
@@ -86,6 +86,8 @@ Another usage for this property is to enable/disable certain wires.  Setting a w
 It is known that sometimes Pad, Extrude, and Pocket cannot find the proper normal for the WireFilter.  If it's a Pad or an Extrude you can use FixNormal to try to fix the Pad or Extrude by setting its custom direction to the wires true normal.  For Pockets, there currently is no option for using custom directions.  You can try creating a Draft facebinder of the WireFilter and using that for the Pocket's profile. Sometimes this works, but sometimes not.  I am hopeful that at some point in the 0.20 development cycle Pocket's will get this Custom direction property and I'll be able to use it to fix problematic Pockets, too.
 
 ## Changelog
+##### 0.2022.02.09
+Add new FaceMaker type "FilledFace".  Can make nonplanar faces.
 ##### 0.2022.02.03
 Fix typo in code when making faces (Facemaker should be FaceMaker)
 ##### 0.2021.12.13
