@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2022.02.09"
-#__version__ = "0.2022.02.09"
+__version__ = "0.2023.09.08"
+#__version__ = "0.2023.09.08"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
+#from PySide import QtGui, QtCore, QtWidgets
+#from PySide.QtGui import QColor
+#from pivy import coin
+#import time
+#COLORS = ["red","green","blue","cyan","magenta","yellow","orange","maroon","purple","white",\
+#"chartreuse", "navy","teal","pink","black","silver"]
 #class WireFilter:
 #    def __init__(self, obj):
 #        obj.addExtension("Part::AttachExtensionPython")
 #        obj.addProperty("App::PropertyInteger","MaxWires","WireFilter","Maximum number of wires to use (prevents hanging on complex sources)").MaxWires = 25
-#        obj.addProperty("App::PropertyIntegerConstraint","ColorKeyCount","WireColors","Number of color key properties to create").ColorKeyCount = (8,0,138,1)
 #        obj.addProperty("App::PropertyLinkSub","Source","WireFilter","Source of the wires, typically a sketch or a compound of sketches")
-#        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire) Set Use Selected to False to enable this property.")
+#        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire)  There is a special editor for this if Edit Wire Order is toggled to True.")
 #        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
 #        obj.addProperty("App::PropertyBool","Colorize","WireColors","Whether to colorize wires").Colorize=True
 #        obj.addProperty("App::PropertyEnumeration","FaceMaker","WireFilter","FaceMaker class to use to make face or No Face if no face")
@@ -25,32 +30,33 @@ __version__ = "0.2022.02.09"
 #        obj.addProperty("App::PropertyString","Version","WireFilter","Version of WireFilter used to create this object.").Version = __version__
 #        obj.addProperty("App::PropertyVector","Normal","WireFilter","Normal of Face1 or Wire1 if no face").Normal = FreeCAD.Vector(0,0,1)
 #        obj.addProperty("App::PropertyBool","FollowSource","WireFilter","If False, source's placement is ignored.").FollowSource = True
-#        obj.addProperty("App::PropertyBool","UseSelected","WireOrder","If True, use faces/edges/wires selected when object was first created (based on Source property)").UseSelected = True
 #        obj.addProperty("App::PropertyBool","UseDefault","WireOrder","[Trigger] sets wire order to default [1,2,3,4...] and resets itself to False").UseDefault = False
-#        obj.addProperty("App::PropertyStringList","SelectedEdges","SelectedEdges","Select some edges of this object and toggle SelectEdges trigger to True")
-#        obj.addProperty("App::PropertyBool","SelectEdges","SelectedEdges","[Trigger] adds selected edges to Selected Edges property").SelectEdges = False
-#        obj.addProperty("App::PropertyBool","UseSelectedEdges","SelectedEdges","If True, and if Selected Edges is populated, makes a wire from selected edges and uses that for this object's shape").UseSelectedEdges = False
+#        obj.addProperty("App::PropertyBool","EditWireOrder","WireOrder","[Trigger] opens wire order editor, resets self to False").EditWireOrder = False
+#        obj.addProperty("App::PropertyLink","CompareObject","WireOrder","Object to compare to this wire order in editor")
+#        obj.addProperty("App::PropertyLink","Ghost","WireOrder","Temporary object created while wire order editor is open")
+#        obj.addProperty("App::PropertyBool","HideGhost","WireOrder","Internal use: hide the ghost if comparing wirefilter to itself in wire order dialog").HideGhost = False
+#        obj.addProperty("App::PropertyBool","ReUseGhost","WireOrder","Internal use: whether to reuse same compare object instead of asking.  This is for when using Apply or Accept in dialog").ReUseGhost = False
+#        obj.setEditorMode("Ghost",2) #hidden
+#        obj.setEditorMode("HideGhost",2)
 #        obj.addProperty("App::PropertyBool","FixNormal","WireFilter","[Trigger] Fix Pad or Extrude's custom direction if it can't find the normal correctly.").FixNormal = False
 #        obj.addProperty("App::PropertyFloat","UniformScale","Scaling","Scale the WireFilter uniformly.  Keeps it centered, too.").UniformScale = 1.0
 #        obj.Proxy = self
 #        self.fpName = obj.Name
+#        self.editingMode = False #wire order editor
 #
 #    def onChanged(self,fp,prop):
 #        if prop == "WireOrder":
 #            self.setWireOrder(fp)
 #        elif prop == "UseDefault" and fp.UseDefault and hasattr(fp,"WireOrder"):
-#            fp.UseSelected = False
 #            fp.WireOrder = [] #will get set to defaults
-#        elif prop == "UseSelected" and fp.UseSelected and hasattr(fp,"WireOrder"):
-#            fp.setEditorMode("WireOrder",1)
-#        elif prop == "UseSelected" and not fp.UseSelected and hasattr(fp,"WireOrder"):
-#            fp.setEditorMode("WireOrder",0)
-#        elif prop == "SelectEdges" and fp.SelectEdges:
-#            fp.SelectEdges = False
-#            self.selectEdges(fp)
 #        elif prop == "FixNormal" and fp.FixNormal:
 #            fp.FixNormal = False
 #            self.fixNormal(fp)
+#        elif prop == "Source":
+#            fp.WireOrder = []
+#        elif prop == "EditWireOrder" and fp.EditWireOrder:
+#            t = QtCore.QTimer()
+#            t.singleShot(50, self.showWires)
 #
 #    def clearColorKeys(self,fp):
 #        for p in fp.PropertiesList:
@@ -82,18 +88,6 @@ __version__ = "0.2022.02.09"
 #            for ext in extrudes:
 #                ext.DirMode = "Custom"
 #                ext.Dir = fp.Normal
-#
-#    def selectEdges(self,fp):
-#        '''user will have selected some edges of this object in the 3D view and triggered this command'''
-#        selx = FreeCADGui.Selection.getSelectionEx()
-#        if not selx:
-#            FreeCAD.Console.PrintError("Nothing selected, select some edges of this WireFilter object to make a wire from.\n")
-#            return
-#        if not selx[0].Object == fp or len(selx)>1:
-#            FreeCAD.Console.PrintError("Select only edges from this object.\n")
-#            return
-#        edges = [sub for sub in selx[0].SubElementNames if "Edge" in sub]
-#        fp.SelectedEdges = edges
 #
 #    #borrowed from Draft.Clone scaling code
 #    def scale(self,fp,shp):
@@ -171,32 +165,16 @@ __version__ = "0.2022.02.09"
 #        cut = offset.cut(faceOriginal)
 #        return cut
 #
-#    def executeUseSelectedEdges(self,fp,shp):
-#        edges = [getattr(shp,edgename) for edgename in fp.SelectedEdges]
-#        wire = Part.Wire(edges)
-#        wire = self.offset(fp,wire)
-#        wire = self.scale(fp,wire)
-#        if fp.FaceMaker != "No Face":
-#            if fp.FaceMaker == "InvertedFace":
-#                face = self.makeInvertedFace(fp,[wire])
-#            elif fp.FaceMaker == "FilledFace":
-#                face = self.makeFilledFace(fp, wire)
-#            else:
-#                face = Part.makeFace([wire],fp.FaceMaker)
-#            return face
-#        return wire
-#
 #    def wireIsPlanar(self, wire):
 #        '''check if the wire is planar and return true/false'''
 #        import DraftGeomUtils as dgu
 #        return dgu.is_planar(wire)
 #
-#    def colorize(self,fp,shape,getColor = False,idx = -1):
-#        '''assign colors to individual wires if Colorize = True'''
-#        from PySide.QtGui import QColor
-#        def color(s):
-#            return QColor(s).getRgbF()
-#        colors = ["red","green","blue","cyan","magenta","yellow","orange","light green","purple","gray","dark red"]
+#    def color(self, s):
+#        return QColor(s).getRgbF()
+#
+#    def getCL(self):
+#        colors = COLORS
 #        colorNames = QColor.colorNames() #color name strings supported by Qt
 #        colorNames.remove("black") # will be default color for edges if we run out of colors
 #        for c in colorNames:
@@ -205,31 +183,83 @@ __version__ = "0.2022.02.09"
 #        cL = [] #color list of tuples, eg. red is (1.0,0.0,0.0,1.0) rgba
 #        colorDuplicates = [] #sometimes the name is different, but the color is the same
 #        for cn in colors:
-#            if not color(cn) in cL:
-#                cL.append(color(cn))
+#            if not self.color(cn) in cL:
+#                cL.append(self.color(cn))
 #            else:
 #                colorDuplicates.append(cn)
 #        for cd in colorDuplicates:
 #            colors.remove(cd)
+#        return cL
+#
+#    def colorize(self,fp,shape,getColor = False,idx = -1):
+#        '''assign colors to individual wires if Colorize = True'''
+#        cL = self.getCL()
 #        if getColor:
 #            return cL[idx -1]
 #        if not fp.Colorize:
-#            fp.ViewObject.LineColorArray = [color("black")]
+#            fp.ViewObject.LineColorArray = [self.color("black")]
 #            return
 #        if not len(shape.Wires):
 #            return #no wires
+#        cLArray = self.getColorArray(fp, shape, cL)
+#        fp.ViewObject.LineColorArray = cLArray
+#
+#    def flashAWire(self, fp, idx, reason=None):
+#        red = COLORS.index("red")
+#        blue = COLORS.index("blue")
+#        green = COLORS.index("green")
+#        white = COLORS.index("white")
+#        black = COLORS.index("black")
+#        silver = COLORS.index("silver")
+#        teal = COLORS.index("teal")
+#        yellow = COLORS.index("yellow")
+#        orange = COLORS.index("orange")
+#
+#        if not reason:
+#            colorIndices = []
+#        elif reason == "selected":
+#            colorIndices = [black,white,silver]*15
+#        elif reason == "disabled":
+#            colorIndices = [red,orange,yellow]*15
+#        elif reason == "enabled":
+#            colorIndices = [blue,green,teal]*15
+#
+#        for ii in colorIndices:
+#            self.colorAWire(fp, idx, ii)
+#            time.sleep(.01)
+#            FreeCADGui.updateGui()
+#        self.colorize(fp, fp.Shape)
+#
+#    def colorAWire(self, fp, idx, colorIdx):
+#        cL = self.getCL()
+#        shape = fp.Shape
+#        colors = COLORS
+#        #print(f"in colorAWire, idx = {idx}, colorIdx = {colorIdx}")
+#        cLArray = self.getColorArray(fp, shape, cL)
+#        wireDict = self.getWireDict(shape, len(shape.Edges))
+#        for k,vals in enumerate(wireDict.values()):
+#            numbers = [int(val.replace("Edge",""))-1 for val in vals]
+#            #FreeCAD.Console.PrintMessage(f"Wire{k+1} set to {colors[k]}\n")
+#            if k == idx:
+#                for num in numbers:
+#                    cLArray[num] = cL[colorIdx]
+#                    #FreeCAD.Console.PrintMessage(f"num = {num} cLArray[num] = {cLArray[num]}, cL[colorIdx] = {cL[colorIdx]}\n")   
+#        fp.ViewObject.LineColorArray = cLArray
+#
+#    def getColorArray(self, fp, shape, cL):
 #        edgeCount = len(shape.Edges)
 #        if edgeCount > len(cL):
 #            cL = cL+[color("black")]*(edgeCount - len(cL)) #extend cL with extra black colors
-#            FreeCAD.Console.PrintWarning("Too many wires for the number of colors in the color list, extra wires will all be black\n")
-#        wireDict = self.getWireDict(shape,len(shape.Wires))
+#            FreeCAD.Console.PrintWarning("Too many wires for the number of colors in the color list, extra wires will all be black\n")  
+#        wireDict = self.getWireDict(shape,edgeCount)
+#        colors = COLORS
 #        cLArray = [None]*edgeCount
 #        for k,vals in enumerate(wireDict.values()):
 #            numbers = [int(val.replace("Edge",""))-1 for val in vals]
-#            FreeCAD.Console.PrintMessage(f"Wire{k+1} set to {colors[k]}\n")
+#           # FreeCAD.Console.PrintMessage(f"Wire{k+1} set to {colors[k]}\n")
 #            for num in numbers:
 #                cLArray[num] = cL[k]
-#        fp.ViewObject.LineColorArray = cLArray
+#        return cLArray
 #
 #    def execute(self,fp):
 #        if not fp.Source:
@@ -243,7 +273,8 @@ __version__ = "0.2022.02.09"
 #        wire_count = len(shape.Wires)
 #        if hasattr(fp,"MaxWires") and wire_count > fp.MaxWires:
 #            wire_count = fp.MaxWires
-#        if fp.Source[1] and fp.UseSelected:
+#
+#        if fp.Source[1]:
 #            faces = [name for name in fp.Source[1] if "Face" in name or "Wire" in name]
 #            if len(faces) != 0:
 #                shapes = [getattr(shape,f) for f in faces]
@@ -273,16 +304,15 @@ __version__ = "0.2022.02.09"
 #            wires = wires[:fp.MaxWires]
 #            FreeCAD.Console.PrintWarning("MaxWires ("+str(fp.MaxWires)+") exceeded.  Source has "+str(len(shape.Wires))+" wires.  Set MaxWires property higher if you want to use all the wires.\n")
 #        self.fixWireOrder(fp,shape)
-#
 #        reordered = [wires[ii-1] for ii in fp.WireOrder if ii != 0]
 #        if len(reordered) == 0:
 #            new_shape = Part.Shape()
 #        elif len(reordered)==1:
 #            new_shape = Part.makeCompound(reordered)
 #        elif len(reordered)>1:
-#            new_shape = reordered[0].fuse(reordered[1:])
+#            new_shape = Part.makeCompound(reordered)
 #
-#        if fp.FaceMaker != "No Face" and not fp.UseSelectedEdges:
+#        if fp.FaceMaker != "No Face":
 #            if fp.FaceMaker == "InvertedFace":
 #                face = self.makeInvertedFace(fp,new_shape)
 #            elif fp.FaceMaker == "FilledFace":
@@ -290,12 +320,6 @@ __version__ = "0.2022.02.09"
 #            else:
 #                face = Part.makeFace(new_shape,fp.FaceMaker)
 #            new_shape = face
-#
-#        if not fp.UseSelectedEdges:
-#            new_shape = self.offset(fp,new_shape)
-#
-#        if not fp.UseSelectedEdges:
-#            new_shape = self.scale(fp,new_shape)
 #
 #        fp.positionBySupport()
 #        if fp.FollowSource and not new_shape.isNull():
@@ -310,11 +334,8 @@ __version__ = "0.2022.02.09"
 #        elif hasattr(shape,"Wire1") and self.wireIsPlanar(shape.Wire1) and shape.Wire1.isClosed():
 #            fp.Normal = Part.makeFace(shape.Wire1,"Part::FaceMakerBullseye").normalAt(0,0)
 ##            FreeCAD.Console.PrintMessage("Normal found at: "+str(fp.Normal)+"\n")
-#        else:
+#        elif len(shape.Wires) != 0:
 #            FreeCAD.Console.PrintWarning("Unable to find Normal of Wire1\n")
-#
-#        if fp.UseSelectedEdges and fp.SelectedEdges:
-#            shape = self.executeUseSelectedEdges(fp, shape)
 #
 #        fp.Shape = shape
 #
@@ -323,13 +344,564 @@ __version__ = "0.2022.02.09"
 #        else:
 #            self.colorize(fp,fp.Shape)
 #
+#    def getCompareObject(self,fp):
+#        #put objects with same wire count as fp at the top of the list
+#        objs = [o.Label for o in fp.Document.Objects if hasattr(o,"Shape")\
+#and len(o.Shape.Wires) == len(fp.Shape.Wires)\
+#and o != fp and o != fp.Source[0]]
+#        items = objs
+#        items += [o.Label for o in fp.Document.Objects\
+#if not o.isDerivedFrom("PartDesign::Body")\
+#and (o.isDerivedFrom("Part::Feature")\
+#and o != fp and o != fp.Source[0]\
+#and o.Label not in objs)]
+#        items += [f"Self (uses {fp.Source[0].Label})"]
+#        fp.HideGhost = False
+#        if len(items) == 2:
+#            return fp.Document.getObjectsByLabel(items[0])[0]
+#        elif len(items) == 1:
+#            fp.HideGhost = True
+#            return fp.Source[0]
+#        item,ok = QtGui.QInputDialog.getItem(FreeCADGui.getMainWindow(), "WireFilter","Pick an item from the list to compare the wires to.", items, 0)
+#        if ok:
+#            fp.HideGhost = False
+#            if item == f"Self (uses {fp.Source[0].Label})":
+#                fp.HideGhost = True
+#                return fp.Source[0]
+#            return fp.Document.getObjectsByLabel(item)[0]
+#        else:
+#            return False
+#
+#    def showWires(self):
+#        '''Show the wire order task panel'''
+#        fp = FreeCAD.ActiveDocument.getObject(self.fpName)
+#        if len(fp.Shape.Wires) == 0: #no wires to edit
+#            FreeCAD.Console.PrintMessage("WireFilter: no wires to edit wire order for\n")
+#            return
+#        if not fp.ReUseGhost:
+#            co = self.getCompareObject(fp)
+#        else:
+#            fp.ReUseGhost = False# ask next time unless this is set in dialog
+#            co = fp.CompareObject
+#        if not co:
+#            return
+#        else:
+#            fp.CompareObject = co
+#        wf = fp.Document.addObject("Part::FeaturePython","WF_Ghost")
+#        wf.Label2 = "(Temporary object that should be automatically deleted when dialog closes)"
+#        self.putInBody(fp, wf)
+#        WireFilter(wf)
+#        WireFilterVP(wf.ViewObject)
+#        wf.Source = fp.CompareObject
+#        fp.CompareObject.ViewObject.Visibility = False
+#        fp.Ghost = wf
+#        if fp.HideGhost:
+#            fp.Ghost.ViewObject.Visibility = False
+#        fp.Document.recompute()
+#        
+#        if not FreeCADGui.Control.activeDialog():
+#            panel = TaskEditWireOrdersPanel(fp)
+#            FreeCADGui.Control.showDialog(panel)
+#            self.editingMode = True 
+#        else:
+#            self.editingMode=False
+#            FreeCAD.Console.PrintError("Another task dialog is active.  Close that one and try again.\n")
+#            return
+#
+#    def cleanUpWires(self):
+#        '''remove temporary representation of wires being manipulated'''
+#        fp = FreeCAD.ActiveDocument.getObject(self.fpName)
+#        if fp.Ghost:
+#            fp.Ghost.Source[0].ViewObject.Visibility = True if not fp.HideGhost else False
+#            fp.Document.removeObject(fp.Ghost.Name)
+#            fp.Document.recompute()
+#
+#    def putInBody(self, fp, ghost):
+#        '''put the ghost into the same body as its source'''
+#        bodies = [obj for obj in fp.Document.Objects if obj.isDerivedFrom("PartDesign::Body") and fp.CompareObject in obj.Group]
+#        if len(bodies) == 1:
+#            bodies[0].Group += [ghost]
+#        else:
+#            parts = [obj for obj in fp.Document.Objects if obj.TypeId == "App::Part" and fp.CompareObject in obj.Group]
+#            if len(parts) == 1:
+#                parts[0].Group += [ghost]
+#
+#class TaskEditWireOrdersPanel: #simple editor for wire orders
+#    def __init__(self, fp):
+#        FreeCADGui.Selection.clearSelection()
+#        self.blockSignals = True
+#        self.fp = fp
+#        self.wireOrder = self.fp.WireOrder
+#        self.form = QtWidgets.QWidget()     
+#        self.layout=QtWidgets.QVBoxLayout()
+#        self.form.setLayout(self.layout)
+#        self.form.setWindowTitle('Edit Wire Order')
+#        self.form.setObjectName("TaskEditWireOrdersPanel")
+#        wireBox = QtWidgets.QHBoxLayout()
+#        self.layout.addLayout(wireBox)
+#        self.wireOrderEdit = QtWidgets.QLineEdit()
+#        self.wireOrderEdit.setPlaceholderText(f"(Optional) Enter wire order and press OK or Apply. Example: {self.fp.WireOrder}")
+#        self.wireOrderEdit.setToolTip("\
+#You can use this to directly enter a new wire order rather than using \n\
+#the radio buttons.  Enter as a comma separated list of integers.\n\
+#Enter 0 to disable a wire.")
+#        self.wireOrderLabel = QtWidgets.QLabel(f"Current Wire Order: {fp.WireOrder}")
+#        wireBox.addWidget(self.wireOrderLabel)
+#        wireBox.addWidget(self.wireOrderEdit)
+#        self.hboxes = []
+#        self.buttonlist = []
+#        self.buttongroups = []
+#        self.enableds = [] #checkboxes to enable/disable wires
+#        self.hboxArea = QtWidgets.QVBoxLayout()
+#        self.scrollArea = QtWidgets.QScrollArea()  # Create a scroll area
+#        scrollWidget = QtWidgets.QWidget()
+#        scrollWidget.setStyleSheet("background-color: lightblue;")
+#        scrollWidget.setLayout(self.hboxArea)
+#        self.scrollArea.setWidgetResizable(True)  # Make the widget inside the scrollable
+#        self.scrollArea.setWidget(scrollWidget)  # Set hboxArea as the widget inside the scroll area
+#        self.layout.addWidget(self.scrollArea)  # Add the scroll area to the main layout
+#        self.makeHBoxes()
+#        hbox = QtWidgets.QHBoxLayout()
+#        self.layout.addLayout(hbox)
+#        self.btnHelp = QtWidgets.QPushButton("Toggle help")
+#        hbox.addWidget(self.btnHelp)
+#        self.btnHelp.clicked.connect(self.helpRequested)
+#        if len(self.fp.Shape.Wires) < 7 and not 0 in self.wireOrder:
+#            permsTxt = self.getPermsText(bPrev = True)
+#            self.btnPrevPerms = QtWidgets.QPushButton(permsTxt)
+#            self.btnPrevPerms.clicked.connect(self.previousPermutation)
+#            if permsTxt:
+#                hbox.addWidget(self.btnPrevPerms)
+#            permsTxt = self.getPermsText()
+#            self.btnPerms = QtWidgets.QPushButton(permsTxt)
+#            self.btnPerms.clicked.connect(self.nextPermutation)
+#            if permsTxt:
+#                hbox.addWidget(self.btnPerms)
+#        self.helpLabel = QtWidgets.QLabel()
+#        self.bHelpVisible = False
+#        self.setupHelp()
+#
+#        self.fp.Proxy.editingMode = True
+#        self.blockSignals = False
+#
+#    def checkLuminance (self, bg):
+#        """check the luminance and return either black or white for foreground color"""
+#        bgcol = self.fp.Proxy.color(bg)# takes a string and returns a QColor
+#        red, green, blue, alpha = bgcol
+#
+#    # Convert the color components to the sRGB color space
+#        red_srgb = red if red <= 0.04045 else ((red + 0.055) / 1.055) ** 2.4
+#        green_srgb = green if green <= 0.04045 else ((green + 0.055) / 1.055) ** 2.4
+#        blue_srgb = blue if blue <= 0.04045 else ((blue + 0.055) / 1.055) ** 2.4
+#
+#    # Calculate the luminance
+#        lum = 0.2126 * red_srgb + 0.7152 * green_srgb + 0.0722 * blue_srgb
+#        if lum > 0.5:
+#            return "black"
+#        else:
+#            return "white"
+#
+#    def setupHelp(self):
+#        """add a label at the bottom of the panel to provide helpful information."""
+#        txt = """
+#
+#With this dialog you can edit the wire order in the WireFilter object and you can
+#enable or disable individual wires.  For example, you can make Wire1 of the source
+#object Wire3 of the WireFilter object or you can disable Wire1 in the WireFilter
+#object, in which case Wire2 of the source becomes Wire1 in the WireFilter and so on.
+#
+#Let's suppose you have applied WireFilter to Sketch, which contains 3 wires: Wire1,
+#Wire2, and Wire3.  But you want them reordered in the WireFilter object so that Wire1 
+#becomes Wire3 and Wire3 becomes Wire1.  In this example the wire order needs to be 
+#[3,2,1] since Wire3 becomes Wire1, Wire2 remains the same, and Wire1 becomes Wire3.
+#
+#The motivation for reording the wires is to make Part Design Loft and Part Design
+#Sweep with multisections work the way you want them to work if the wires in the sketches
+#are getting crossed or just not connecting to each other in the desired manner.
+#
+#The motivation for disabling some wires could be where you want to reuse the same
+#sketch, but you don't want to use all the wires.  Or you might be making a WireFilter 
+#of a face and don't want all the wires in the filter.
+#
+#Push Buttons -- In the left column there are a number of push buttons, one for each 
+#wire in the object you are comparing the WireFilter to.  Typically, this object would 
+#be the other sketch to be used in a Loft.  If you click one of these push buttons the 
+#only effect is that wire gets flashed in the 3D view.  The flashing colors are black, 
+#gray, and white, and then after it finishes flashing it reverts back to its original color. 
+#That's the only thing the left column buttons do -- they flash the wire that you need 
+#to select one of the radio buttons to connect to in the Loft or Sweep.
+#
+#Enabled Checkboxes -- In each row in the 2nd column there is an Enabled checkbox.  This 
+#is used to enable or disable that wire in the WireFilter object.  When you disable a 
+#wire it will flash through red, yellow, and orange, to indicate to you that it is being 
+#disabled.  It's Wire Order value is set to 0.  If that was not the wire you wanted to 
+#disable, all you need to do is check the box again to re-enable it.  When being re-enabled, 
+#the wire will flash blue, teal, and green.
+#
+#Radio Buttons -- The remainder of the widgets in each row are radio buttons.  These are 
+#used to select the mapping for this wire in the compared item, e.g. sketch, to connect to 
+#in a Part Design Loft.  When you select one of these radio buttons the indicated wire will 
+#flash white, gray, and black.  So, by clicking the push button and the radio button and watching
+#to see which wires flash, then you can know which ones will be connected in the Loft.  Note:
+#if you see asterisks in the labels of the radio buttons it's an indicator that none of the radio 
+#buttons in that column have yet been connected to a wire in the compare object.
+#
+#Current Wire Order Label -- This label is at the top left of the form.  It shows the current 
+#working wire order.  If it turns red, that indicates there are duplicates in the wire order. 
+#For example: [1,1,3] would be red because the 1 is duplicated.  This is normal because you will 
+#necessarily have duplicates while you are fiddling with the dialog.  You should not use Apply 
+#or OK while this label is red because it will cause some wires to be disabled and you won't be 
+#able to re-enabled them without first resetting everything back to default and starting all over
+#again. In the above example [1,1,3] Wire2 will be disabled.
+#
+#Previous Permutation, Next Permutation buttons
+#
+#If the WireFilter object has fewer than 7 wires you will get additional permutation buttons. 
+#You can use these to try all the various possible wire orders, but only if you haven't disabled 
+#any of the wires.  Permutation is a fancy way of saying how the wires are ordered.  The fewer 
+#wires you have the fewer possible permutations there are.  For example, if you only have 2 wires, 
+#then the permutations are: [1,2] and [2,1].  If you have 3 wires, then you have 6 permutations: 
+#[1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], and [3,2,1].  The Permutation buttons just allow you 
+#to cycle through all the possibilities.  When you get to 7 or more wires, there are too many 
+#permutations to reasonably cycle through in this manner, so these buttons are not shown.
+#
+#Reset -- resets the wire order to what it was when you first opened this editor or
+#since the last time you clicked Apply or Restore Defaults.
+#
+#Restore Defaults -- Resets the wire order back to default: [1,2,3...] (Can be undone
+#using FreeCAD's Undo/Redo system.
+#
+#OK -- Accept the current wire order configured in this dialog (or manually entered
+#in the wire order line edit widget) and closes the dialog. (Can be undone.)
+#
+#Cancel -- Cancel any changes made in this dialog since last time you clicked Apply
+#or Restore Defaults and closes dialog.
+#
+#Apply -- Apply changes, but leave the dialog open.  (Can be undone, but you should
+#press Cancel, then Undo, and then open the dialog again if you want to undo.)
+#Note: This function actually clicks OK, and then reopens the dialog for you.
+#
+#Toggle Help -- Brings up this help text.  Click it again to dismiss to make more room in the
+#dialog.
+#
+#"""
+#
+#
+#        self.helpLabel.setText(txt)
+#        self.layout.addWidget(self.helpLabel)
+#        self.helpLabel.setVisible(False)
+#
+#    def helpRequested(self):
+#        self.bHelpVisible = not self.bHelpVisible
+#        self.helpLabel.setVisible(self.bHelpVisible)
+#
+#    def makeHBoxes(self):
+#        def makeTrigger(x,y): return lambda : self.wireBtnClicked(x,y)
+#        def makeEnabled(x): return lambda : self.enabledClicked(x)
+#        buttons = []
+#        for idx,wire in enumerate(self.fp.Shape.Wires):
+#            idx += 1
+#            hbox = QtGui.QHBoxLayout()
+#            btn = QtGui.QPushButton(self.fp.CompareObject.Label+" "+str(idx))
+#            btn.setStyleSheet(f"background-color: {COLORS[idx-1]};color:{self.checkLuminance(COLORS[idx-1])};font-weight:bold;")
+#            btn.clicked.connect(makeTrigger(idx,self.fp))
+#            btn.setObjectName(btn.text())
+#            buttons.append(btn)
+#            hbox.addWidget(btn)
+#            cb = QtWidgets.QCheckBox("Enabled")
+#            cb.setChecked(True)
+#            cb.setObjectName(f"Enabled {idx}")
+#            self.enableds.append(cb)
+#            hbox.addWidget(cb)
+#            cb.clicked.connect(makeEnabled(idx-1))
+#
+#            group = QtGui.QButtonGroup(hbox)
+#            self.buttongroups.append(group)
+#            for idx2,wire2 in enumerate(self.fp.CompareObject.Shape.Wires):
+#                idx2 += 1
+#                btn2 = QtGui.QRadioButton("WF "+str(idx2))
+#                if self.wireOrder[idx -1] == idx2:
+#                    btn2.setChecked(True)
+#                btn2.setStyleSheet(f"background-color: {COLORS[idx2-1]};color:{self.checkLuminance(COLORS[idx2-1])};font-weight:bold;")
+#                btn2.clicked.connect(makeTrigger(idx,idx2))
+#                btn2.setObjectName(f"{idx}_{idx2}")
+#                hbox.addWidget(btn2)
+#                buttons.append(btn2)
+#                group.addButton(btn2)
+#            self.buttonlist.append(buttons)
+#            buttons = []
+#            self.hboxArea.addLayout(hbox)
+#            if idx % 3 == 0:
+#                divider = QtWidgets.QFrame()
+#                divider.setFrameShape(QtWidgets.QFrame.HLine)
+#                divider.setFrameShadow(QtWidgets.QFrame.Sunken)
+#                self.hboxArea.addWidget(divider)
+#
+#    def nextPermutation(self):
+#        """Try the next permutation in the wire order list"""
+#        if 0 in self.wireOrder:
+#            FreeCAD.Console.PrintMessage("WireFilter: 0 in wire order, skipping permutations\n")
+#            return
+#        from itertools import permutations
+#        unique_integers = sorted(self.wireOrder)
+##        print(f"self.wireOrder = {self.wireOrder}")
+#        # Generate all permutations
+#        all_permutations = list(permutations(unique_integers))
+#        if tuple(self.wireOrder) in all_permutations:
+#            idx = all_permutations.index(tuple(self.wireOrder))
+##            print(f"idx = {idx}")
+#            if idx >= len(all_permutations) -1:
+#                idx = -1 #return the first permutation
+#            self.wireOrder = list(all_permutations[idx+1])
+#            self.clicked(QtGui.QDialogButtonBox.Apply)
+#        else:
+#            FreeCAD.Console.PrintMessage("WireFilter: current wire order not a valid permutation\n")
+#            return
+#
+#    def previousPermutation(self):
+#        """Try the previous permutation in the wire order list"""
+#        if 0 in self.wireOrder:
+#            FreeCAD.Console.PrintMessage("WireFilter: 0 in wire order, skipping permutations\n")
+#            return
+#        from itertools import permutations
+#        unique_integers = sorted(self.wireOrder)
+##        print(f"self.wireOrder = {self.wireOrder}")
+#        # Generate all permutations
+#        all_permutations = list(permutations(unique_integers))
+#        if tuple(self.wireOrder) in all_permutations:
+#            idx = all_permutations.index(tuple(self.wireOrder))
+##            print(f"idx = {idx}")
+#            if idx == 0:
+#                idx = len(all_permutations)
+#            self.wireOrder = list(all_permutations[idx-1])
+#            self.clicked(QtGui.QDialogButtonBox.Apply)
+#        else:
+#            FreeCAD.Console.PrintMessage("WireFilter: current wire order not a valid permutation\n")
+#            return
+#    def getPermsText(self, bPrev = False):
+#        from itertools import permutations
+#        unique_integers = sorted(self.wireOrder)
+#        # Generate all permutations
+#        all_permutations = list(permutations(unique_integers))
+#        if tuple(self.wireOrder) in all_permutations:
+#            idx = all_permutations.index(tuple(self.wireOrder)) + 1
+#            if idx == len(all_permutations):
+#                idx = 0 #return the first permutation
+#            idx += 1
+#            if not bPrev:
+#                return f"Next Permutation {idx}/{len(all_permutations)}"
+#            else:
+#                idx -= 2
+#                if idx == 0:
+#                    idx = len(all_permutations)
+#                elif idx == -1:
+#                    idx = len(all_permutations)-1
+#                return f"Previous Permutation {idx}/{len(all_permutations)}"             
+#        else:
+#            return ""     
+#
+#    def enabledClicked(self, idx):
+#        btn = self.enableds[idx]
+#        checked = btn.isChecked()
+##        print(f"enabled clicked {idx}, btn = {btn}, checked = {checked}")
+#        radios = self.buttonlist[idx]
+#        current = 0
+#        for rr,radio in enumerate(radios):
+#            if radio.isChecked():
+#                current = rr
+#        self.wireOrder[idx] = 0 if not checked else current
+#        self.wireOrderLabel.setText(f"Current Wire Order: {self.wireOrder}")
+#        reason = "enabled" if checked else "disabled"
+#        self.fp.Proxy.flashAWire(self.fp,idx,reason)
+#            
+#    def wireBtnClicked(self, row, col):
+#        if col != self.fp: #radio button clicked
+#            btn = self.buttonlist[row-1][col]
+#            pushBtn = self.buttonlist[row-1][0] #left column push button for this row
+##            print(btn.objectName()+" found")
+##            print(f"row,col = {row},{col}")
+##            print(f"incoming wire order: {self.wireOrder}")
+#            old = self.wireOrder[row-1]
+#            new = col
+##            print(f"old = {old}")
+##            print(f"new = {new}")
+#            self.fp.Proxy.flashAWire(self.fp,new-1,reason="selected")
+#            self.wireOrder[row-1] = new
+#            self.wireOrderLabel.setText(f"Current Wire Order: {self.wireOrder}")
+#            wo_stripped = [x for x in self.wireOrder if x != 0]
+#            if self.hasDuplicates():
+#                self.wireOrderLabel.setStyleSheet("color:red;")
+#                self.wireOrderLabel.setText(f"Current Wire Order: {self.wireOrder}")
+#                self.markDuplicates()
+#            else:
+#                self.unMarkAll()
+#                self.wireOrderLabel.setStyleSheet("color:black;")
+#            self.fp.Proxy.colorize(self.fp, self.fp.Shape)
+#        else: #one of the left column buttons was clicked
+#            self.fp.Ghost.Proxy.flashAWire(self.fp.Ghost, row-1,reason="selected")
+#
+#    def findDuplicates(self, my_list):
+#        """find the subsequent duplicates in a list and return their indices"""
+#        seen = {}  # A dictionary to store the last seen index of each element
+#        duplicates = []  # List to store the indices of subsequent duplicates
+#        for index, item in enumerate(my_list):
+#            if item == 0:
+#                continue
+#            if item in seen:
+#                # If the item is already in the 'seen' dictionary, it's a duplicate
+#                if seen[item] is not None:
+#                    # Append the index of the subsequent duplicate
+#                    duplicates.append(index)
+#            else:
+#                # If the item is not in 'seen', add it with the current index
+#                seen[item] = index
+#        return duplicates
+#
+#    def unMarkAll(self):
+#        """Unmark all pushbuttons as duplicates"""
+#        btns = [item for sublist in self.buttonlist for item in sublist] #flatten list
+#        for btn in btns:
+#            if "QRadioButton" in str(type(btn)):
+#                btn.setText(btn.text().replace("*",""))
+#
+#    def parseRadioButtonObjectName(self, name):
+#        parts = name.split("_")
+#        if len(parts) == 2:
+#            x = int(parts[0])
+#            y = int(parts[1])
+#            return x, y
+#        else:
+#            raise ValueError("Input string does not have the expected format")  
+#
+#    def markDuplicates(self):
+#        self.unMarkAll()
+#        duplicates = self.findDuplicates(self.wireOrder)
+#        all_btns = [item for sublist in self.buttonlist for item in sublist] #flatten list
+#        radio_btns = [b for b in all_btns if "QRadioButton" in str(type(b))]
+##        print (f"radio_btns = {radio_btns}")
+#        cols = len(self.buttonlist[0])-1
+#        uncheckedColumns = list(range(1,cols+1))
+##        print(f"uncheckedColumns = {uncheckedColumns}")
+#        for rb in radio_btns:
+#            r,c = self.parseRadioButtonObjectName(rb.objectName())
+##            print(f"r,c,rb.text(),rb.isChecked() = {r},{c},{rb.text()},{rb.isChecked()}")
+#            if rb.isChecked() and c in uncheckedColumns:
+#                uncheckedColumns.remove(c)
+##            print(f"After parsing: uncheckedColumns = {uncheckedColumns}")  
+#        uncheckedRadios = []
+#        for rb in radio_btns:
+#            r,c = self.parseRadioButtonObjectName(rb.objectName())
+#            if c in uncheckedColumns:
+#                uncheckedRadios.append(rb)
+#        for btn in uncheckedRadios:
+#            txt = btn.text()
+#            if not "*" in txt:
+#                new_txt = "*" + txt + "*"
+#                btn.setText(new_txt)                       
+#        
+#
+#    def hasDuplicates(self):
+#        """Checks if self.wireOrder has duplicate non-zero values"""
+#        wo_stripped = [x for x in self.wireOrder if x != 0]
+#        if len(wo_stripped) != len(list(set(wo_stripped))):
+#            return True
+#        else:
+#            return False
+#
+#    def reject(self):
+#        FreeCADGui.Control.closeDialog()
+#        FreeCADGui.ActiveDocument.resetEdit()
+#        self.fp.Proxy.editingMode = False #self.fp.Proxy is the fp class object (self in that class)
+#        self.fp.ViewObject.Visibility = True
+#        self.fp.Proxy.cleanUpWires()
+#        FreeCAD.ActiveDocument.recompute()
+#
+#    def accept(self):
+#        if self.hasDuplicates():
+#            FreeCAD.Console.PrintWarning("WireFilter: Wire order has duplicate non-zero values\n")
+#        self.fp.Document.openTransaction("WireFilter:Accept Wire Order Changes")
+#        wo = self.parseWireOrderEdit()
+#        if wo:
+#            self.fp.WireOrder = wo
+#        else:
+#            self.fp.WireOrder = self.wireOrder
+#        self.fp.Document.commitTransaction()
+#        FreeCADGui.Control.closeDialog()
+#        FreeCADGui.ActiveDocument.resetEdit()
+#        self.fp.Proxy.editingMode = False
+#        if not self.fp: #user deleted or closed document perhaps
+#            return
+#        self.fp.ViewObject.Visibility = True
+#        self.fp.Proxy.cleanUpWires()
+#        FreeCAD.ActiveDocument.recompute()
+#
+#    def parseWireOrderEdit(self):
+#        """returns a python list of integers if valid, else None"""
+#        input_string = self.wireOrderEdit.text()
+#        if not input_string:
+#            return None
+#        else:
+#            if not input_string[0] == "[":
+#                input_string = "[" + input_string
+#            if not input_string[-1] == "]":
+#                input_string = input_string + "]"
+#        import ast
+#        try:
+#            # Attempt to parse the input string as a Python literal (list)
+#            parsed_list = ast.literal_eval(input_string)
+#            # Check if the parsed result is a list
+#            if isinstance(parsed_list, list):
+#                # Check if all elements in the list are integers
+#                if all(isinstance(item, int) for item in parsed_list):
+#                    return parsed_list
+#                else:
+#                    FreeCAD.Console.PrintError("WireFilter: enter only integers in the list\n")
+#                    return None
+#            else:
+#                FreeCAD.Console.PrintError("WireFilter: not a valid list in wire order line edit.")
+#        except (ValueError, SyntaxError):
+#            FreeCAD.Console.PrintError("WireFilter: unable to parse list for new wire order.")
+#            return None
+#
+#    def clicked(self, button):
+#        if button == QtGui.QDialogButtonBox.Reset:
+#            self.reject()
+#            self.fp.ReUseGhost = True
+#            self.fp.ViewObject.Proxy.setEdit(self.fp.ViewObject, 5) #essentially closes and restarts editor
+#        elif button == QtGui.QDialogButtonBox.Apply:
+#            self.fp.Document.openTransaction("WireFilter:ApplyChanges")
+#            self.accept()
+#            self.fp.ReUseGhost = True
+#            self.fp.ViewObject.Proxy.setEdit(self.fp.ViewObject, 5) #essentially closes and restarts editor
+#            self.fp.Document.commitTransaction()
+#        elif button == QtGui.QDialogButtonBox.RestoreDefaults:
+#            self.fp.Document.openTransaction("WireFilter:RestoreDefaults")
+#            self.fp.UseDefault=True
+#            self.reject()
+#            self.fp.ReUseGhost = True
+#            self.fp.ViewObject.Proxy.setEdit(self.fp.ViewObject, 5) #essentially closes and restarts editor
+#            self.fp.Document.commitTransaction()
+#
+#    def getStandardButtons(self):
+#        return int(QtGui.QDialogButtonBox.Ok) | int(QtGui.QDialogButtonBox.Apply)\
+#         | int(QtGui.QDialogButtonBox.Cancel) | int(QtGui.QDialogButtonBox.Reset)\
+#         | int(QtGui.QDialogButtonBox.RestoreDefaults)
+#
+#
 #class WireFilterVP:
 #    def __init__(self, obj):
 #        '''Set this object to the proxy object of the actual view provider'''
 #        obj.Proxy = self
+#        self.Object = obj.Proxy.Object
 #
 #    def attach(self,vobj):
-#        self.vobj = vobj
+#        self.Object = vobj.Object
+#
+#    def dropObject(self, vp, dropped):
+#        vp.Object.Source = dropped
+#
+#    def canDropObject(self, dropped):
+#        return hasattr(dropped, "ViewObject")
 #
 #    def onDelete(self, vobj, subelements):
 #        if vobj.Object.Source:
@@ -349,7 +921,7 @@ __version__ = "0.2022.02.09"
 #        return modes
 #
 #    def claimChildren(self):
-#        fp = self.vobj.Object
+#        fp = self.Object
 #        if fp.Source and fp.ClaimChildren and not fp.Source[0].isDerivedFrom("PartDesign::Feature"):
 #            return [fp.Source[0]]
 #        else:
@@ -363,6 +935,30 @@ __version__ = "0.2022.02.09"
 #        '''Map the display mode defined in attach with those defined in getDisplayModes.\
 #                Since they have the same names nothing needs to be done. This method is optional'''
 #        return mode
+#
+#    def setupContextMenu(self, vobj, menu):
+#        if vobj.Object.Proxy.editingMode == False:
+#            text = "Edit Wire Orders"
+#            mode = 5
+#        else:
+#            text = "Accept Wire Orders"
+#            mode = 6
+#        if len(vobj.Object.Shape.Wires) == 0:
+#            text = "No wires to edit"
+#            mode = 5
+#        action = menu.addAction(text)
+#        action.triggered.connect(lambda: self.setEdit(vobj,mode))
+#
+#    def setEdit(self,vp,modNum):
+#        if modNum == 3:
+#            FreeCADGui.runCommand('Part_ColorPerFace',0)
+#        elif modNum == 5: #begin edit mode
+#            vp.Object.Proxy.showWires()
+#        elif modNum == 6: #accept changes and end edit mode
+#            vp.Object.Proxy.editingMode = False
+#            vp.Object.Proxy.cleanUpWires()
+#            FreeCADGui.Control.closeDialog()
+#        return False
 #
 #    def onChanged(self, vp, prop):
 #        '''Here we can do something when a single property got changed'''
@@ -619,15 +1215,15 @@ __version__ = "0.2022.02.09"
 
 ########################################
 #CODE_ENDS_HERE
-
+__icon__="https://github.com/mwganson/wirefilter/raw/main/wirefilter.svg"
 BASENAME = 'wirefilter'
 
 def makeObject(WF):
 
     doc = FreeCAD.ActiveDocument
     selobj = FreeCADGui.Selection.getSelectionEx()
-    #wf = doc.addObject("Part::Part2DObjectPython","WireFilter")
-    wf = doc.addObject("Part::FeaturePython","WireFilter")
+    wf = doc.addObject("Part::Part2DObjectPython","WireFilter")
+    #wf = doc.addObject("Part::FeaturePython","WireFilter")
     WF.WireFilter(wf)
     WF.WireFilterVP(wf.ViewObject)
 
@@ -642,7 +1238,7 @@ def makeObject(WF):
             if len(parts) == 1:
                 parts[0].Group += [wf]
     else:
-        FreeCAD.Console.PrintError("No selection\n")
+        FreeCAD.Console.PrintMessage("WireFilter: No selected object.  Edit the Source property or drop an object on to it.\n")
 
 
 
@@ -683,7 +1279,8 @@ if __name__ == "__main__":
         mb = QtGui.QMessageBox()
         mb.setWindowTitle(BASENAME+" setup")
         mb.setIcon(mb.Information)
-        mb.setStandardButtons(mb.Ok | mb.Cancel)
+        mb.setStandardButtons(mb.Ok)
+        mb.addButton(mb.Cancel)
         mb.setDefaultButton(mb.Cancel)
         okBtn = mb.button(QtGui.QMessageBox.StandardButton.Ok)
         cancelBtn = mb.button(QtGui.QMessageBox.StandardButton.Cancel)
