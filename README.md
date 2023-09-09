@@ -6,7 +6,7 @@ With this FreeCAD macro you can filter a sketch (or any object with wires, inclu
 <a href="wirefilter_bullseye_example.FCStd">Download</a> the example file.<br/>
 <br/>
 ## Installation
-WireFilter is not yet available in the addon manager.  To install, place the wirefilter.FCMacro file into your macro folder and run it.  On first run it asks to create a wirefilter.py file.  When wirefilter is updated it will also automatically update this .py file, but when you uninstall the WireFilter macro you need to delete the .py, too.
+Install using the addon manager.  Tools menu -> addon manager -> macros -> WireFilter
 ## Toolbar Icon
 <a href="wirefilter.svg">Download</a> the toolbar icon: <img src="wirefilter.svg" alt="toolbar icon">
 
@@ -35,15 +35,6 @@ We can scale independently along all 3 major axes, x, y, and z.  -1 will mirror 
 Default: (1,1,1).  The scale to use for the x, y, and z directions.  (Code borrowed / liberated / stolen from Draft Clone code.
 #### Uniform Scale (float)
 Default: 1.0.  Scale equally in all directions.  With 2D wires, Z is ignored during the scaling.  The XYZ scaling above doesn't recenter the object, but this one does, so use it where you want to keep the scaled object centered with the original.
-### Selected Edges
-After the initial filtering of the wires from the original object, we can then filter edges to use in the WireFilter object itself.  A wire is created from the selected edges and that is the only wire displayed.  A face can be made from the wire.  It can also be offset and scaled.  Usage: select the edges in the 3D view, then toggle the Select Edges trigger from False to True to populate the Selected Edges property (a string list holding the names of the selected edges).  Then set Use Selected Edges to True to enable this feature.
-#### Select Edges (boolean trigger)
-Default: False.  Not your typical boolean variable.  This is a command trigger.  When you set it to True it runs a command, then sets itself back to False for the next time.  This command will take the edges of the WireFilter object that are selected in the 3D view and use them to populate the Selected Edges property.
-#### Selected Edges (stringlist)
-Default: empty list.  Will hold the names of the selected edges to be used to make a wire.  This can be manually edited by entering in the names of the edges, e.g. Edge3, to use.
-#### Use Selected Edges (boolean)
-Default: False.  If True and if Selected Edges property is not empty, the selected edges are used in place of the wires currently in use.  A wire is made from the selected edges and displayed in the 3D view as the shape of the WireFilter object.  You can make a face of this wire, offset this wire, and scale this wire.
-### Wire Filter
 #### Claim Children (boolean)
 Default: True.  Whether to claim children in the tree view.  You may toggle this to see the effect.
 #### Face Maker (enumeration)
@@ -64,12 +55,8 @@ The Source is the object from which the wires are being filter, example -- Sketc
 The version of the WireFilter macro used in creating this WireFilter object, not necessarily the same as installed currently.
 ### Wire Colors (group)
 As of version 0.2021.12.6 individual wires are now color-coded in the 3D view.  Each edge of the wire gets the same color, beginning with red, green, blue, etc. for Wire1, Wire2, Wire3, and so on.  Set Colorize property to False to disable this feature.  Note: in some cases an edge may belong to more than one wire.  In such cases the last wire color to be set will take precedence.  For example, if Edge1 belongs to both Wire1 and Wire2, then Edge1 will be set to green because the edges in Wire2 get set later than the edges in Wire1, and those previously set colors get overwritten.
-#### Color Key Count (integer)
-Numer of wire color key properties to create.  Default: 8.  Note: these color properties are for information only and are readonly.  This way you can compare the colors of these key properties to what you see in the 3D view to hopefully aid in identifying which edges belong to which wires.
 #### Colorize (boolean)
 Default: True.  Set to False to disable the colorize feature.  All wires will be default black color.
-#### WireNNN Color (color, readonly)
-For information only, readonly property.  These act as keys so you can see the color of each wire by comparing the color of these properties with what you see in the 3D view.  Note: Selecting a vertex of the WireFilter object instead of the entire object makes the edges visible in these colors rather than the green associated with indicating the object has been selected.
 ### Wire Order
 WireFilter can modify the order of the wires used.  This can be useful where in a loft the wires are crossed.  You can change the wire order rather than edit one of the sketches.  Using 0 for a wire means don't use that wire at all, so this is a good way to filter out some wires, by setting their wire order to 0.
 #### Use Default (boolean trigger)
@@ -86,6 +73,13 @@ Another usage for this property is to enable/disable certain wires.  Setting a w
 It is known that sometimes Pad, Extrude, and Pocket cannot find the proper normal for the WireFilter.  If it's a Pad or an Extrude you can use FixNormal to try to fix the Pad or Extrude by setting its custom direction to the wires true normal.  For Pockets, there currently is no option for using custom directions.  You can try creating a Draft facebinder of the WireFilter and using that for the Pocket's profile. Sometimes this works, but sometimes not.  I am hopeful that at some point in the 0.20 development cycle Pocket's will get this Custom direction property and I'll be able to use it to fix problematic Pockets, too.
 
 ## Changelog
+##### 0.2023.09.08b
+Move Colorize property to WireFilter group to clean up property view
+##### 0.2023.09.08
+Add new wire order dialog (access via context menu in combo view)
+Remove the Use Selected and related features
+Remove the color key properties from the data tab to clean that area up some
+Switch from Part::FeaturePython base type to Part::Part2DObjectPython for better integration into Part Design
 ##### 0.2022.02.09
 Add new FaceMaker type "FilledFace".  Can make nonplanar faces.
 ##### 0.2022.02.03
