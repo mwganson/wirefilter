@@ -64,10 +64,7 @@ Then we click OK to close the dialog.  Next, select the WireFilter object and Sk
 
 <img src="wirefilter_scr10.png" alt = "WireFilter example: Loft preview after reordering wires">
 
-
-
-
-
+<a href="WireFilter_Example.FCStd">Example featuring loft</a>
 
 ## Properties
 A WireFilter object is a feature python object, fully parametric, with properties you may edit to change the object's behavior and in some cases to trigger commands.
