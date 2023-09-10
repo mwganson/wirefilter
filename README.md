@@ -11,9 +11,63 @@ Install using the addon manager.  Tools menu -> addon manager -> macros -> WireF
 <a href="wirefilter.svg">Download</a> the toolbar icon: <img src="wirefilter.svg" alt="toolbar icon">
 
 ## Usage
-Select an object to filter.  If the entire object is selected in the tree, then all the wires are used.  If one or more faces are selected, then the wires that make up those faces are used.  If one or more edges are selected, then the wires that contain those edges will be filtered for use.  After making the desired selection run the macro, and a new document object called WireFilter will be created.  Modify the WireFilter by editing its properties.  If desired, you can select edges of the WireFilter object in the 3D view and toggle the SelectEdges boolean trigger to put the selected edges into the Selected Edges property (a string list).  Then if you set UseSelectedEdges to True you will futher filter out all other edges and form a new wire from the selected edges.  This new wire can be offset, scaled, and made into a face.
+Select an object to filter.  If the entire object is selected in the tree, then all the wires are used.  If one or more faces are selected, then the wires that make up those faces are used.  If one or more edges are selected, then the wires that contain those edges will be filtered for use.  After making the desired selection run the macro, and a new document object called WireFilter will be created.  Modify the WireFilter by editing its properties.
 
 By default it locates itself coincident with the filtered object, but if you wish to do so you can toggle the Follow Source property to False, and then attach the WireFilter or adjust its placement as desired.  In this manner you can have multiple WireFilters of the same sketch and place them in different positions, for example, to loft between them.
+
+## Wire Reordering
+Sometimes it happens we must reorder the wires in a sketch in preparation for using Part Design Loft or Part Design Multi-section Sweep.  In those operations the wires of each section are connected.  For example, in the Loft operation Wire1 of the base sketch is lofted to Wire1 in the section sketch.  Wire2 of the base sketch to Wire2 of the section sketch, and so on.  But which is Wire1 and how does FreeCAD know what the user intends?  The way this works is the first created wire is Wire1, and the 2nd is Wire2, and so on.  So, it depends on the order of creation.  The problem with that is the user might not make all the wires in the same order in both sketches.  In the simple case of a circle within another circle it's a trivial fix as the user can simply swap the radius or diameter constraints, but in more complicated sketches, such as 5 holes inside a circle for a hub, this can be a complicated process.  The user might in the end resort to completely recreating both sketches, taking care to create the wires in the same order.  This is where WireFilter can come in.
+
+Consider these 2 sketches:
+
+<img src="wirefilter_scr2.png" alt = "sketches to use in a loft">
+
+And how it looks in the Part Design Loft dialog when we see the preview.  Several of the wires are crossed.
+
+<img src="wirefilter_scr3.png" alt = "crossed wires in Loft preview">
+
+We can solve this with a WireFilter of one of the sketches.  We'll choose Sketch (bottom sketch) in this example.  Select the sketch in the combo view and run the WireFilter macro.
+
+<img src="wirefilter_scr4.png" alt = "WireFilter object made from sketch, note the colors of each wire">
+
+In the above image you can see the WireFilter object is displayed with different colors for each wire in the 3D view.  The sequence is RGBCMY = Red (Wire1), Green (Wire2), Blue (Wire3), Cyan (Wire4), Magenta (Wire5), Yellow (Wire6).
+
+Next, we need to reorder the wires of the WireFilter object so that they will connect to the desired wires in Sketch001.  We don't modify Sketch at all, but rather use the WireFilter object as a filter or interface for that sketch.  Select the WireFilter in the combo view, right click to bring up the context menu, select "Edit Wire Orders" in the menu.  This brings up the Wire Editor dialog, which is a Task panel dialog.
+
+<img src="wirefilter_scr5.png" alt = "Wire Editor dialog">
+
+Notice in the above image now we can see the wire colors for both sketches.  What is happening behind the scenes is a new WireFilter object has been created temporarily for this purpose.  The new object ("WF_Ghost") will be deleted automatically when the dialog closes.  It's purpose is to help us see which wires are which when we begin reordering the wires.
+
+Notice in the image there is a grid of buttons.  The left column is full of push buttons, one for each wire in the compare object, which in this case is the sketch we want to use for the section in the Loft.  In this file there was only one other sketch in the model, so the WF_Ghost was made of that other sketch.  Had there been more options the user would have been presented with a list of options to choose from.
+
+In the next column there are a bunch of checkboxes labeled "Enabled", all of them checked.  WireFilter can also disable wires.  This is done by setting the Wire Order for that wire to 0, which is accomplished in the dialog by unchecking the appropriate "Enabled" checkbox.  When you uncheck one of these check boxes the wire to be disabled will flash red to orange to yellow in the 3D view to acknowledge which wire is to be disabled.  If the wrong wire flashes, just check the box and uncheck the correct one.  When the box is checked to re-enable the wire the wire being re-enabled will flash again, this time the colors it flashes through will be blue to green to teal, to serve as the visual confirmation of which wire is getting re-enabled.
+
+The remaining columns are radio buttons.  Each row has one (and only one) radio button selected.  That is the wire to which this wire (based on row number) will connect to in the Loft or Multi-section Sweep.  The top row is for Wire1, which is why the "Sketch001 1" button is Red, and why the next row "Sketch001 2" button is green, and so on.  If you click one of the push buttons the wire associated with that button will flash confirmation.  This selection flash goes through colors white, black, and gray.  We have 3 types of flashes the wires can do: Selection flash (white-gray-black), Disable flash (red-orange-yellow), and Enable flash (green-blue-teal).  If you click one of the radio buttons, whether it's already selected or not, the associated wire in the WireFilter object will flash.  All of these radio buttons are color-coded to match up with the color of the wire it is associated with.  If there are many wires sometimes the colors can appear ambiguous, but this is where the flashing really comes in handy.
+
+In this example, we click the Sketch 1 push button and note which wire flashes in the 3D view. It's the red triangle in the upper object.  We can move the 3D view around to get a better angle, shown in the image below:
+
+<img src="wirefilter_scr6.png" alt = "WireFilter dialog repositioned 3D view">
+
+We can see that the cyan circle in the bottom image is the proper one to connect to this wire, so we select the cyan-colored radio button in that row.  Notice that the Wire Order label at the top of the dialog is now red in color.  This indicates there are duplicates in the wire order.  If you look at the wire order you see that Wire4 appears twice.  Also note that column of red buttons for WF 1 (WireFilter Wire1) all have asterisks in the labels.  This indicates this column has no radio buttons selected.  We are in a bit of an error state at this point, but this is normal and will always happen during the rewiring process.  They're just indicators that we should not click Apply or OK at this time because we don't have the wire order correct yet.  The wire order label will turn black again once we have each wire in the WireFilter object connected to a unique wire in the compare object (Sketch001) in this example.
+
+<img src="wirefilter_scr7.png" alt = "WireFilter dialog after selecting cyan radio button in top row">
+
+Next we go through and click the push button in the next row (green one), see which wire flashes, and select the appropriate radio button to connect to that wire.  In this example, the green triangle is already aligned with the green circle, so we don't need to do anything.  We move to the next row.  Clicking the blue push button shows us the blue triangle needs to connect to the yellow circle, so we select the yellow radio button.  They cyan push button needs to connect to the magenta circle, so we select the magenta radio button (WF 5).  Magenta to blue and yellow to red in the last 2 rows, respectively.  Here is how it looks with all the correct radio buttons selected:
+
+<img src="wirefilter_scr8.png" alt = "WireFilter dialog will all correct radio buttons selected">
+
+Notice in the above image the Wire Order label is back to black again and none of the columns have asterisks in their labels.  Next, we click OK, and check the new color scheme for the WireFilter object and how that compares to the compare object (WF_Ghost):
+
+<img src="wirefilter_scr9.png" alt = "WireFilter dialog after selecting all correct radio buttons and clicking Apply button">
+
+Then we click OK to close the dialog.  Next, select the WireFilter object and Sketch001 in the combo view and click the Loft toolbar icon.  This brings us up the new Loft preview:
+
+<img src="wirefilter_scr10.png" alt = "WireFilter example: Loft preview after reordering wires">
+
+
+
+
+
 
 ## Properties
 A WireFilter object is a feature python object, fully parametric, with properties you may edit to change the object's behavior and in some cases to trigger commands.
