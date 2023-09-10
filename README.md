@@ -88,12 +88,16 @@ Default: (1,1,1).  The scale to use for the x, y, and z directions.  (Code borro
 Default: 1.0.  Scale equally in all directions.  With 2D wires, Z is ignored during the scaling.  The XYZ scaling above doesn't recenter the object, but this one does, so use it where you want to keep the scaled object centered with the original.
 #### Claim Children (boolean)
 Default: True.  Whether to claim children in the tree view.  You may toggle this to see the effect.
+#### Colorize (boolean)
+As of version 0.2021.12.6 individual wires are now color-coded in the 3D view.  Each edge of the wire gets the same color, beginning with red, green, blue, etc. for Wire1, Wire2, Wire3, and so on.  Set Colorize property to False to disable this feature.  Note: in some cases an edge may belong to more than one wire.  In such cases the last wire color to be set will take precedence.  For example, if Edge1 belongs to both Wire1 and Wire2, then Edge1 will be set to green because the edges in Wire2 get set later than the edges in Wire1, and those previously set colors get overwritten.
+
+Default: True.  Set to False to disable the colorize feature.  All wires will be default black color.
 #### Face Maker (enumeration)
 Default: No Face.  Options: No Face, Part::FaceMakerBullseye, Part::FaceMakerCheese, Part::FaceMakerSimple, Part::FaceMakerExtrusion, InvertedFace.  Each has its strengths and limitations.  Sometimes when one fails another might work.  Bullseye is good at handling holes inside of holes in faces.  None of the others can do this.  Cheese is good as multiple holes, but not nested holes.  Simple and Extrusion fail with holes, but can manage some nonplanar wires where Bullseye and Cheese fail.  InvertedFace is a new custom type that creates a new inverted face.  The outer wire of the original face is scaled to InvertedFaceScale property, a face is made from that scaled outer wire and the original face cut from it to make the inverted face.  The FilledFace type uses Part.makeFilledFace(), which can make nonplanar faces.
 #### Fix Normal (boolean trigger)
 Triggers a command, sets itself back to False.  The command is to attempt to fix a Pad or Extrude that has failed to determine the correct normal for a WireFilter pad or extrusion.  The WireFilter object computes its own normal.  (See Normal property.)  This Normal is used as a custom direction in the Pad or Extrude object.  If this doesn't work, try making a face and doing it again.
 #### Follow Source (boolean)
-Default: True.  If True, the WireFilter object's shape is at the same placement as the original object.  If the source object moves, the WireFilter moves with it.  Set this to False if you want to be able to place the WireFilter in another placement.  The WireFilter itself can be attached.
+Default: True.  If True, the WireFilter object's shape is at the same placement as the original object.  If the source object moves, the WireFilter moves with it.  Set this to False if you want to be able to place the WireFilter in another placement.
 #### InvertedFaceScale (float)
 Default: 5.  Only applicable when Face Maker property is set to InvertedFace.  The original face's outer wire is scaled by this amount and used to create a new face.  From the new face the original face is cut to create the inverted face.
 #### Max Wires (integer)
@@ -104,20 +108,22 @@ The normal direction for Wire1 / Face1 of the WireFilter object.  Normal means p
 The Source is the object from which the wires are being filter, example -- Sketch.  Optionally, this can also include individual faces or edges.  Select the face of a cube and run the macro.  The WireFilter will use the wire from which that face was made and exclude all the other wires in that cube.  If edges are selected, then all wires associated with those edges are used.  In a cube each edge is associated with 2 wires.  For example, if you select the top front edge then you get the top face wire and front face wire. Try it!  This can be done most easily when first making the WireFilter, but you can also edit this property after creation.  This is a very powerful feature becaus with it you can very easily pre-select certain wires to use in the WireFilter.
 #### Version (string)
 The version of the WireFilter macro used in creating this WireFilter object, not necessarily the same as installed currently.
-### Wire Colors (group)
-As of version 0.2021.12.6 individual wires are now color-coded in the 3D view.  Each edge of the wire gets the same color, beginning with red, green, blue, etc. for Wire1, Wire2, Wire3, and so on.  Set Colorize property to False to disable this feature.  Note: in some cases an edge may belong to more than one wire.  In such cases the last wire color to be set will take precedence.  For example, if Edge1 belongs to both Wire1 and Wire2, then Edge1 will be set to green because the edges in Wire2 get set later than the edges in Wire1, and those previously set colors get overwritten.
-#### Colorize (boolean)
-Default: True.  Set to False to disable the colorize feature.  All wires will be default black color.
+
+
 ### Wire Order
 WireFilter can modify the order of the wires used.  This can be useful where in a loft the wires are crossed.  You can change the wire order rather than edit one of the sketches.  Using 0 for a wire means don't use that wire at all, so this is a good way to filter out some wires, by setting their wire order to 0.
+#### Compare Object (link)
+This is the object being compared in the wire edit dialog.
+#### Edit Wire Order (boolean trigger)
+This will always be false, but if you toggle it temporarily to true, it will execute the wire order dialog.  Alternatively, open the dialog via the context menu.
 #### Use Default (boolean trigger)
 Default: False.  Sets itself back to False and resets the Wire Order to [1,2,3,4...], the default order.
-#### Use Selected (boolean)
-Default True:  If True, then the wire names, face names, or edge names in the Source property are used, regardless of the Wire Order setting.  Toggle this to False if you want to use the Wire Order property for filtering the wires.  (While True, the Wire Order property is readonly.)
 #### Wire Order (integer list)
 The order of the wires.  Normally, wire order doesn't really matter, but sometimes it does. If lofting between 2 sketches with more than 1 wire each, then the wires are connected to each other by their wire orders.  Wire1 from sketch1 to Wire1 from sketch2, and so on.  The wire order, by default, is the order in which the wires were created when making the sketch.  So, if you are making sketches to be lofted, be sure to create the wires in the same order in both sketches.  Otherwise, you might need to either edit the sketches or use this wire order to get the correct wires connected to each other.<br/>
 <br/>
 Another usage for this property is to enable/disable certain wires.  Setting a wire's order to 0 means don't use the wire at all.  You can delete later wires and the WireFilter will pad the 0's for you in the missing spots automatically.  For example, if you have 8 wires: 1,2,3,4,5,6,7,8 and you only want to use 1 and 2 you can delete 3 through 8 and the WireFilter object will make the wire order 1,2,0,0,0,0,0,0 for you.  Note: the line number is the wire and the value is the wire order for that wire.
+
+There is a special wire order editor you can bring up from the context menu by right-clicking the WireFilter object in the combo view.  See above for a tutorial on using this editor.
 
 ## Known Issues:
 
