@@ -128,6 +128,13 @@ There is a special wire order editor you can bring up from the context menu by r
 It is known that sometimes Pad, Extrude, and Pocket cannot find the proper normal for the WireFilter.  If it's a Pad or an Extrude you can use FixNormal to try to fix the Pad or Extrude by setting its custom direction to the wires true normal.  For Pockets, there currently is no option for using custom directions.  You can try creating a Draft facebinder of the WireFilter and using that for the Pocket's profile. Sometimes this works, but sometimes not.  I am hopeful that at some point in the 0.20 development cycle Pocket's will get this Custom direction property and I'll be able to use it to fix problematic Pockets, too.
 
 ## Changelog
+##### 0.2023.09.11
+Check if object was made of subobjects selected from original source instead of entire source and disable wire editor dialog if so because 
+it doesn't work properly in such cases.  Instead, advise user to make a WireFilter of this WireFilter.  Show message on creation of such objects.
+Add UsePreselection boolean property to allow to use entire object even though subelements were selected originally.
+In wire editor dialog add options to hide ghost and WF objects via checkbox
+Change Toggle help pushbutton into a show help checkbox
+Speed up flashing if there are many wires in the WireFilter
 ##### 0.2023.09.09
 Fix toolbar icon for installation with addon manager
 ##### 0.2023.09.08b
