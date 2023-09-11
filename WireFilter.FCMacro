@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2023.09.09"
-#__version__ = "0.2023.09.09"
+__version__ = "0.2023.09.11"
+#__version__ = "0.2023.09.11"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #from PySide import QtGui, QtCore, QtWidgets
@@ -11,11 +11,12 @@ __version__ = "0.2023.09.09"
 #class WireFilter:
 #    def __init__(self, obj):
 #        obj.addExtension("Part::AttachExtensionPython")
-#        obj.addProperty("App::PropertyInteger","MaxWires","WireFilter","Maximum number of wires to use (prevents hanging on complex sources)").MaxWires = 25
+#        obj.addProperty("App::PropertyInteger","MaxWires","WireFilter","Maximum number of wires to use (prevents hanging on complex sources)").MaxWires = 50
 #        obj.addProperty("App::PropertyLinkSub","Source","WireFilter","Source of the wires, typically a sketch or a compound of sketches")
 #        obj.addProperty("App::PropertyIntegerList","WireOrder","WireOrder","Order of wires (0 = disable wire)  There is a special editor for this if Edit Wire Order is toggled to True.")
 #        obj.addProperty("App::PropertyBool","ClaimChildren","WireFilter","Whether to claim children in tree view").ClaimChildren=True
 #        obj.addProperty("App::PropertyBool","Colorize","WireFilter","Whether to colorize wires").Colorize=True
+#        obj.addProperty("App::PropertyBool","UsePreselection","WireFilter","Applicable only when subobjects were selected when creating WireFilter object.  If True, only those preselected subojects are used, else if False, all wires are used").UsePreselection = True
 #        obj.addProperty("App::PropertyEnumeration","FaceMaker","WireFilter","FaceMaker class to use to make face or No Face if no face")
 #        obj.FaceMaker = ["No Face","Part::FaceMakerBullseye", "Part::FaceMakerCheese","Part::FaceMakerSimple","Part::FaceMakerExtrusion","InvertedFace", "FilledFace"]
 #        obj.addProperty("App::PropertyFloat","InvertedFaceScale","WireFilter","(InvertedFace Face Maker only) 2D scaling used for creating outer face from which original face is cut").InvertedFaceScale = 5
@@ -57,6 +58,10 @@ __version__ = "0.2023.09.09"
 #        elif prop == "EditWireOrder" and fp.EditWireOrder:
 #            t = QtCore.QTimer()
 #            t.singleShot(50, self.showWires)
+#        elif prop == "MaxWires":
+#            fp.WireOrder = []
+#        elif prop == "UsePreselection":
+#            fp.WireOrder = []
 #
 #    def clearColorKeys(self,fp):
 #        for p in fp.PropertiesList:
@@ -215,14 +220,17 @@ __version__ = "0.2023.09.09"
 #        yellow = COLORS.index("yellow")
 #        orange = COLORS.index("orange")
 #
+#        num_wires = len(fp.WireOrder)
+#        multiplier = 15 if num_wires < 5 else 5 if num_wires < 10 else 2
+#
 #        if not reason:
 #            colorIndices = []
 #        elif reason == "selected":
-#            colorIndices = [black,white,silver]*15
+#            colorIndices = [black,white,silver]*multiplier
 #        elif reason == "disabled":
-#            colorIndices = [red,orange,yellow]*15
+#            colorIndices = [red,orange,yellow]*multiplier
 #        elif reason == "enabled":
-#            colorIndices = [blue,green,teal]*15
+#            colorIndices = [blue,green,teal]*multiplier
 #
 #        for ii in colorIndices:
 #            self.colorAWire(fp, idx, ii)
@@ -249,7 +257,7 @@ __version__ = "0.2023.09.09"
 #    def getColorArray(self, fp, shape, cL):
 #        edgeCount = len(shape.Edges)
 #        if edgeCount > len(cL):
-#            cL = cL+[color("black")]*(edgeCount - len(cL)) #extend cL with extra black colors
+#            cL = cL+[self.color("black")]*(edgeCount - len(cL)) #extend cL with extra black colors
 #            FreeCAD.Console.PrintWarning("Too many wires for the number of colors in the color list, extra wires will all be black\n")  
 #        wireDict = self.getWireDict(shape,edgeCount)
 #        colors = COLORS
@@ -274,7 +282,7 @@ __version__ = "0.2023.09.09"
 #        if hasattr(fp,"MaxWires") and wire_count > fp.MaxWires:
 #            wire_count = fp.MaxWires
 #
-#        if fp.Source[1]:
+#        if fp.Source[1] and fp.UsePreselection:
 #            faces = [name for name in fp.Source[1] if "Face" in name or "Wire" in name]
 #            if len(faces) != 0:
 #                shapes = [getattr(shape,f) for f in faces]
@@ -300,6 +308,7 @@ __version__ = "0.2023.09.09"
 #                            wire_order[k-1] = k
 #                    fp.WireOrder = wire_order
 #        wires = shape.Wires
+#        fp.WireOrder = fp.WireOrder[:len(wires)]
 #        if hasattr(fp,"MaxWires") and len(wires) > fp.MaxWires:
 #            wires = wires[:fp.MaxWires]
 #            FreeCAD.Console.PrintWarning("MaxWires ("+str(fp.MaxWires)+") exceeded.  Source has "+str(len(shape.Wires))+" wires.  Set MaxWires property higher if you want to use all the wires.\n")
@@ -375,6 +384,10 @@ __version__ = "0.2023.09.09"
 #    def showWires(self):
 #        '''Show the wire order task panel'''
 #        fp = FreeCAD.ActiveDocument.getObject(self.fpName)
+#        if fp.UsePreselection and fp.Source[1]:
+#            FreeCAD.Console.PrintError("WireFilter created using subelements of source object.  Create a new WireFilter of this WireFilter to \
+#edit the wire order\n")
+#            return
 #        if len(fp.Shape.Wires) == 0: #no wires to edit
 #            FreeCAD.Console.PrintMessage("WireFilter: no wires to edit wire order for\n")
 #            return
@@ -463,9 +476,17 @@ __version__ = "0.2023.09.09"
 #        self.makeHBoxes()
 #        hbox = QtWidgets.QHBoxLayout()
 #        self.layout.addLayout(hbox)
-#        self.btnHelp = QtWidgets.QPushButton("Toggle help")
-#        hbox.addWidget(self.btnHelp)
-#        self.btnHelp.clicked.connect(self.helpRequested)
+#        self.showWireFilterCheckBox = QtWidgets.QCheckBox("Show WireFilter")
+#        self.showWireFilterCheckBox.setChecked(True)
+#        self.showWireFilterCheckBox.clicked.connect(self.onShowWireFilterCheckBoxClicked)
+#        hbox.addWidget(self.showWireFilterCheckBox)
+#        self.showGhostCheckBox = QtWidgets.QCheckBox("Show Ghost")
+#        self.showGhostCheckBox.setChecked(True)
+#        self.showGhostCheckBox.clicked.connect(self.onShowGhostCheckBoxClicked)
+#        hbox.addWidget(self.showGhostCheckBox)
+#        self.helpRequestedCheckBox = QtWidgets.QCheckBox("Show help")
+#        hbox.addWidget(self.helpRequestedCheckBox)
+#        self.helpRequestedCheckBox.clicked.connect(self.helpRequested)
 #        if len(self.fp.Shape.Wires) < 7 and not 0 in self.wireOrder:
 #            permsTxt = self.getPermsText(bPrev = True)
 #            self.btnPrevPerms = QtWidgets.QPushButton(permsTxt)
@@ -478,7 +499,6 @@ __version__ = "0.2023.09.09"
 #            if permsTxt:
 #                hbox.addWidget(self.btnPerms)
 #        self.helpLabel = QtWidgets.QLabel()
-#        self.bHelpVisible = False
 #        self.setupHelp()
 #
 #        self.fp.Proxy.editingMode = True
@@ -554,6 +574,10 @@ __version__ = "0.2023.09.09"
 #able to re-enabled them without first resetting everything back to default and starting all over
 #again. In the above example [1,1,3] Wire2 will be disabled.
 #
+#Show ghost checkbox
+#The ghost is the colorized version of the object the wirefilter is being compared with.  It's a 
+#temporary object that will be deleted when the editor dialog is closed.
+#
 #Previous Permutation, Next Permutation buttons
 #
 #If the WireFilter object has fewer than 7 wires you will get additional permutation buttons. 
@@ -581,8 +605,7 @@ __version__ = "0.2023.09.09"
 #press Cancel, then Undo, and then open the dialog again if you want to undo.)
 #Note: This function actually clicks OK, and then reopens the dialog for you.
 #
-#Toggle Help -- Brings up this help text.  Click it again to dismiss to make more room in the
-#dialog.
+#Show help -- Brings up this help text when checked.
 #
 #"""
 #
@@ -592,8 +615,16 @@ __version__ = "0.2023.09.09"
 #        self.helpLabel.setVisible(False)
 #
 #    def helpRequested(self):
-#        self.bHelpVisible = not self.bHelpVisible
-#        self.helpLabel.setVisible(self.bHelpVisible)
+#        checked = self.helpRequestedCheckBox.isChecked()
+#        self.helpLabel.setVisible(checked)
+#
+#    def onShowGhostCheckBoxClicked(self):
+#        checked = self.showGhostCheckBox.isChecked()
+#        self.fp.Ghost.ViewObject.Visibility = checked
+#
+#    def onShowWireFilterCheckBoxClicked(self):
+#        checked = self.showWireFilterCheckBox.isChecked()
+#        self.fp.ViewObject.Visibility = checked
 #
 #    def makeHBoxes(self):
 #        def makeTrigger(x,y): return lambda : self.wireBtnClicked(x,y)
@@ -1220,15 +1251,18 @@ BASENAME = 'wirefilter'
 
 def makeObject(WF):
 
-    doc = FreeCAD.ActiveDocument
+    doc = FreeCAD.ActiveDocument if FreeCAD.ActiveDocument else FreeCAD.newDocument()
     selobj = FreeCADGui.Selection.getSelectionEx()
     wf = doc.addObject("Part::Part2DObjectPython","WireFilter")
-    #wf = doc.addObject("Part::FeaturePython","WireFilter")
     WF.WireFilter(wf)
     WF.WireFilterVP(wf.ViewObject)
 
     if selobj:
         wf.Source = (selobj[0].Object,selobj[0].SubElementNames)
+        if selobj[0].SubElementNames:
+            FreeCAD.Console.PrintMessage("WireFilter created using selected subelements.  You should make a WireFilter of this WireFilter if you \
+wish to edit the wire order.  This is because the numer of elements in the wire order is based on the number \
+of wires in the original source shape.\n")
         selobj[0].Object.ViewObject.Visibility = False
         bodies = [obj for obj in doc.Objects if obj.isDerivedFrom("PartDesign::Body") and selobj[0].Object in obj.Group]
         if len(bodies) == 1:
