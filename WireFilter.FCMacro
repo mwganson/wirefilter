@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-__version__ = "0.2023.09.11"
-#__version__ = "0.2023.09.11"
+__version__ = "0.2023.09.11b"
+#__version__ = "0.2023.09.11b"
 ##WireFilter, 2021, by <TheMarkster> LGPL 2.1 or later
 #import FreeCAD, FreeCADGui, Part, Draft
 #from PySide import QtGui, QtCore, QtWidgets
@@ -53,7 +53,7 @@ __version__ = "0.2023.09.11"
 #        elif prop == "FixNormal" and fp.FixNormal:
 #            fp.FixNormal = False
 #            self.fixNormal(fp)
-#        elif prop == "Source":
+#        elif prop == "Source" and hasattr(fp,"WireOrder"):
 #            fp.WireOrder = []
 #        elif prop == "EditWireOrder" and fp.EditWireOrder:
 #            t = QtCore.QTimer()
@@ -282,7 +282,7 @@ __version__ = "0.2023.09.11"
 #        if hasattr(fp,"MaxWires") and wire_count > fp.MaxWires:
 #            wire_count = fp.MaxWires
 #
-#        if fp.Source[1] and fp.UsePreselection:
+#        if fp.Source[1] and bool(hasattr(fp,"UsePreselection") and fp.UsePreselection):
 #            faces = [name for name in fp.Source[1] if "Face" in name or "Wire" in name]
 #            if len(faces) != 0:
 #                shapes = [getattr(shape,f) for f in faces]
@@ -346,7 +346,7 @@ __version__ = "0.2023.09.11"
 #        elif len(shape.Wires) != 0:
 #            FreeCAD.Console.PrintWarning("Unable to find Normal of Wire1\n")
 #
-#        fp.Shape = shape
+#        fp.Shape = self.offset(fp,shape)
 #
 #        if not hasattr(fp,"Colorize"): #object made with earlier version of WireFilter macro
 #            return
@@ -384,7 +384,7 @@ __version__ = "0.2023.09.11"
 #    def showWires(self):
 #        '''Show the wire order task panel'''
 #        fp = FreeCAD.ActiveDocument.getObject(self.fpName)
-#        if fp.UsePreselection and fp.Source[1]:
+#        if bool(hasattr(fp,"UsePreselection") and fp.UsePreselection) and fp.Source[1]:
 #            FreeCAD.Console.PrintError("WireFilter created using subelements of source object.  Create a new WireFilter of this WireFilter to \
 #edit the wire order\n")
 #            return
